@@ -144,7 +144,7 @@ public class TransaccionService {
                             CuentaBancaria origen = cargarCuentaOperable(
                                     peticion.cuentaOrigenId(), actor, privilegiado);
                             CuentaBancaria destino = cargarDestino(
-                                    peticion, actor, privilegiado, tipo);
+                                    peticion, actor, privilegiado);
                             validarCombinacion(tipo, origen, destino);
                             validarActiva(origen, "origen");
                             validarActiva(destino, "destino");
@@ -298,14 +298,12 @@ public class TransaccionService {
     }
 
     private CuentaBancaria cargarDestino(
-            TransaccionCrearRequest peticion, Long actor, boolean privilegiado, String tipo) {
-        if ("TRANSFERENCIA".equals(tipo)) {
-            String numero = Filtros.normalizar(peticion.cuentaDestinoNumero());
-            if (numero != null) {
-                return cuentaRepository.findByNumeroCuenta(numero)
-                        .orElseThrow(() -> new RecursoNoEncontradoException(
-                                "No existe la cuenta destino " + numero + "."));
-            }
+            TransaccionCrearRequest peticion, Long actor, boolean privilegiado) {
+        String numero = Filtros.normalizar(peticion.cuentaDestinoNumero());
+        if (numero != null) {
+            return cuentaRepository.findByNumeroCuenta(numero)
+                    .orElseThrow(() -> new RecursoNoEncontradoException(
+                            "No existe la cuenta destino " + numero + "."));
         }
         return cargarCuentaOperable(peticion.cuentaDestinoId(), actor, privilegiado);
     }

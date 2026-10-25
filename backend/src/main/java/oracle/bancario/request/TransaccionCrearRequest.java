@@ -9,9 +9,10 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
- * Registro de un movimiento. En una transferencia la cuenta destino puede
- * ser de otro usuario y se identifica por numero. El estado inicial depende
- * del motor de reglas: APROBADA automaticamente o PENDIENTE para el analista.
+ * Registro de un movimiento. Cuando la operacion tiene cuenta destino, esta
+ * puede ser de otro usuario y se identifica por numero. El estado inicial
+ * depende del motor de reglas: APROBADA automaticamente o PENDIENTE para el
+ * analista.
  */
 public record TransaccionCrearRequest(
         Long cuentaOrigenId,
