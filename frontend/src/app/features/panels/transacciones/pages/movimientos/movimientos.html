@@ -164,7 +164,7 @@
   [titulo]="editando() ? 'Resolver movimiento' : 'Nuevo movimiento'"
   [subtitulo]="editando()
     ? 'Ajusta el monto, el estado o el concepto del movimiento.'
-    : 'Registra una operación; el estado dependerá de las reglas.'"
+    : 'Registra una operación.'"
   (cerrar)="cerrarForm()"
 >
   <form class="grid-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
@@ -232,9 +232,6 @@
               placeholder="001-1234567890"
               autocomplete="off"
             />
-            <span class="form-hint">
-              Escribe el número de cuenta del destinatario. Puede ser tuya o de otro usuario.
-            </span>
           </div>
         }
 
@@ -287,12 +284,8 @@
 
     @if (!editando()) {
       <p class="notice field-full">
-        <ui-icon name="info" [size]="16" />
-        Elige tu cuenta origen cuando la operación lo requiera y escribe el número de la cuenta
-        destino, aunque sea de otro usuario. Las transferencias y pagos entre usuarios pasan por el
-        motor de reglas: si las cumplen se aprueban automáticamente; si no, quedan
-        <strong>PENDIENTES</strong> y abren un caso para el analista. Depósitos y retiros quedan
-        pendientes de resolución.
+        <ui-icon name="key" [size]="16" />
+        <strong>Sistema completamente seguro y verificado.</strong>
       </p>
     } @else {
       <p class="notice field-full">

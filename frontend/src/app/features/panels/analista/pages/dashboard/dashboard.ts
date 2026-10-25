@@ -55,7 +55,7 @@ export class AnalistaDashboardPage {
     return [
       {
         id: 'total',
-        etiqueta: 'Movimientos USUARIO',
+        etiqueta: 'Movimientos',
         icono: 'transfer',
         valor: kpis ? String(kpis.total) : null,
         detalle: kpis ? `${kpis.pendientes} pendientes de revisión` : 'Sin datos',
