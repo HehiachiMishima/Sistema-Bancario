@@ -14,7 +14,7 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: farmacias_peruanas
+      MYSQL_DATABASE: sistema_bancario
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local}
       TZ: UTC
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
@@ -44,7 +44,7 @@ services:
       BACKEND_PORT: "2003"
       DB_HOST: mysql
       DB_PORT: "3306"
-      DB_NAME: hehiachi_mishima
+      DB_NAME: sistema_bancario
       DB_USER: root
       DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local}
       DB_PARAMS: useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
