@@ -64,7 +64,74 @@ export const PANEL_ADMIN: PanelDef = {
   ],
 }
 
-export const PANELES: PanelDef[] = [PANEL_ADMIN];
+export const PANEL_CUENTAS: PanelDef = {
+  id: 'cuentas',
+  nombre: 'Cuentas',
+  descripcion: 'Apertura y gestión de cuentas bancarias.',
+  icono: 'bank',
+  ruta: '/cuentas',
+  permiso: PERMISOS.PANEL_CUENTAS,
+  acento: 'brand',
+  modulos: [
+    {
+      id: 'dashboard',
+      nombre: 'Dashboard',
+      descripcion: 'Resumen de saldos y cuentas.',
+      icono: 'dashboard',
+      ruta: 'dashboard',
+      permiso: PERMISOS.DASHBOARD_CUENTAS,
+    },
+    {
+      id: 'cuentas',
+      nombre: 'Cuentas',
+      descripcion: 'Altas, edición y consulta de cuentas.',
+      icono: 'wallet',
+      ruta: 'cuentas',
+      permiso: PERMISOS.VER_CUENTAS,
+    },
+  ],
+};
+
+export const PANEL_TRANSACCIONES: PanelDef = {
+  id: 'transacciones',
+  nombre: 'Transacciones',
+  descripcion: 'Registro y seguimiento de movimientos financieros.',
+  icono: 'transfer',
+  ruta: '/transacciones',
+  permiso: PERMISOS.PANEL_TRANSACCIONES,
+  acento: 'accent',
+  modulos: [
+    {
+      id: 'dashboard',
+      nombre: 'Dashboard',
+      descripcion: 'Resumen de movimientos y estados.',
+      icono: 'dashboard',
+      ruta: 'dashboard',
+      permiso: PERMISOS.DASHBOARD_TRANSACCIONES,
+    },
+    {
+      id: 'movimientos',
+      nombre: 'Movimientos',
+      descripcion: 'Altas y resolución de transacciones.',
+      icono: 'transfer',
+      ruta: 'movimientos',
+      permiso: PERMISOS.VER_TRANSACCIONES,
+    },
+  ],
+};
+
+export const PANEL_ANALISTA: PanelDef = {
+  id: 'analista',
+  nombre: 'Analista',
+  descripcion: 'Espacio reservado para la resolución de casos.',
+  icono: 'analytics',
+  ruta: '/analista',
+  permiso: PERMISOS.PANEL_ANALISTA,
+  acento: 'success',
+  modulos: [],
+};
+
+export const PANELES: PanelDef[] = [PANEL_ADMIN, PANEL_CUENTAS, PANEL_TRANSACCIONES, PANEL_ANALISTA];
 
 export function primerModuloAccesible(panel: PanelDef, permisos: readonly string[]): ModuloPanel | undefined {
   return panel.modulos.find((modulo) => permisos.includes(modulo.permiso));

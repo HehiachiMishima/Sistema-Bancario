@@ -5,6 +5,15 @@ export interface LoginRequest {
   contrasena: string;
 }
 
+export interface RegistroRequest {
+  usuario: string;
+  contrasena: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string | null;
+}
+
 export interface AuthResponse {
   token: string;
   tipo: string;

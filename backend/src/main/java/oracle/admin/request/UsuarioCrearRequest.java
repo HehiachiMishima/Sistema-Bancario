@@ -30,5 +30,8 @@ public record UsuarioCrearRequest(
         @Size(max = 20, message = "El telefono no puede exceder 20 caracteres.")
         String telefono,
 
-        Boolean activo) {
+        Boolean activo,
+
+        /** Rol inicial opcional (p. ej. ANALISTA). Se asigna en la misma alta. */
+        Long rolId) {
 }

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { mensajeDeError } from '../../../core/errors/error.util';
 import { Auth } from '../../../core/services/auth';
 import { Carga } from '../../../core/services/carga';
@@ -10,7 +10,7 @@ import { LightPillar } from '../../../shared/ui/light-pillar/light-pillar';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, Icon, LightPillar],
+  imports: [ReactiveFormsModule, RouterLink, Icon, LightPillar],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })

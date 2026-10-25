@@ -6,11 +6,15 @@ import oracle.common.support.Filtros;
 import oracle.common.support.Listas;
 import oracle.common.support.Trazas;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import oracle.admin.model.Rol;
+import oracle.admin.model.UsuarioRol;
 import oracle.admin.repository.ResolucionRepository;
+import oracle.admin.repository.RolRepository;
 import oracle.admin.response.UsuarioResumenResponse;
 import oracle.common.exception.ConflictoException;
 import oracle.common.exception.OperacionNoPermitidaException;
@@ -43,6 +47,7 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioRolRepository usuarioRolRepository;
+    private final RolRepository rolRepository;
     private final AutorizacionCache autorizacionCache;
     private final PasswordEncoder passwordEncoder;
     private final Transacciones transacciones;
@@ -51,6 +56,7 @@ public class UsuarioService {
     public UsuarioService(
             UsuarioRepository usuarioRepository,
             UsuarioRolRepository usuarioRolRepository,
+            RolRepository rolRepository,
             AutorizacionCache autorizacionCache,
             PasswordEncoder passwordEncoder,
             Transacciones transacciones,
@@ -58,6 +64,7 @@ public class UsuarioService {
         this.resolucionRepository = resolucionRepository;
         this.usuarioRepository = usuarioRepository;
         this.usuarioRolRepository = usuarioRolRepository;
+        this.rolRepository = rolRepository;
         this.autorizacionCache = autorizacionCache;
         this.passwordEncoder = passwordEncoder;
         this.transacciones = transacciones;
@@ -113,6 +120,10 @@ public class UsuarioService {
     public Mono<ApiResponse<UsuarioResponse>> crear(UsuarioCrearRequest peticion) {
         Long actor = ActorActual.id();
         return Mono.fromCallable(() -> Trazas.medir(log, "UsuarioService.crear usuario=" + peticion.usuario(), () -> transacciones.ejecutar(() -> {
+            if (peticion.rolId() != null && !tienePermiso(actor, "ASIGNAR_ROLES")) {
+                throw new OperacionNoPermitidaException(
+                        "No tiene permiso para asignar roles al crear usuarios.");
+            }
             if (usuarioRepository.existsByUsuario(peticion.usuario())) {
                 throw new ConflictoException("Ya existe un usuario con el nombre '" + peticion.usuario() + "'.");
             }
@@ -130,6 +141,19 @@ public class UsuarioService {
             usuario.setActivo(peticion.activo() == null ? Boolean.TRUE : peticion.activo());
             Auditoria.alCrear(usuario, actor);
             usuarioRepository.save(usuario);
+
+            if (peticion.rolId() != null) {
+                Rol rol = rolRepository.findById(peticion.rolId())
+                        .orElseThrow(() -> new RecursoNoEncontradoException(
+                                "No existe el rol con id " + peticion.rolId() + "."));
+                UsuarioRol asignacion = new UsuarioRol();
+                asignacion.setUsuario(usuario);
+                asignacion.setRol(rol);
+                asignacion.setCreadoPor(actor);
+                asignacion.setCreadoEn(LocalDateTime.now());
+                usuarioRolRepository.save(asignacion);
+                autorizacionCache.invalidar(usuario.getId());
+            }
 
             return ApiResponse.ok("Usuario creado.", UsuarioResponse.of(usuario));
         }))).subscribeOn(Schedulers.boundedElastic());
@@ -222,5 +246,10 @@ public class UsuarioService {
             throw new OperacionNoPermitidaException(
                     "El usuario '" + usuario.getUsuario() + "' esta protegido: no se puede modificar ni eliminar.");
         }
+    }
+
+    private boolean tienePermiso(Long actor, String permiso) {
+        return autorizacionCache.cargar(actor).autoridades().stream()
+                .anyMatch(autoridad -> permiso.equals(autoridad.getAuthority()));
     }
 }

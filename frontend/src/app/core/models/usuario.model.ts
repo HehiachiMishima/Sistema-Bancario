@@ -20,6 +20,8 @@ export interface UsuarioCrearRequest {
   email: string;
   telefono?: string | null;
   activo?: boolean;
+  /** Rol inicial opcional (p. ej. ANALISTA). */
+  rolId?: number | null;
 }
 
 export interface UsuarioActualizarRequest {

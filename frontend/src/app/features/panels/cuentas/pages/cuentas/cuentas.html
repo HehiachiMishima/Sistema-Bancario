@@ -1,0 +1,244 @@
+<header class="page-head">
+  <div>
+    <h1 class="page-head__title">Cuentas</h1>
+    <p class="page-head__sub">Abre, edita y consulta tus cuentas bancarias.</p>
+  </div>
+  <button *hasPermiso="permisos.CREAR_CUENTAS" type="button" class="ui-btn ui-btn--primary" (click)="abrirCrear()">
+    <ui-icon name="plus" [size]="18" />
+    Nueva cuenta
+  </button>
+</header>
+
+<div class="toolbar">
+  <div class="ui-search toolbar__grow">
+    <ui-icon name="search" [size]="18" />
+    <input
+      type="search"
+      class="ui-input"
+      placeholder="Buscar por número o titular…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
+  </div>
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroTipo($any($event.target).value)">
+    <option value="TODOS">Todos los tipos</option>
+    <option value="AHORRO">Ahorro</option>
+    <option value="CORRIENTE">Corriente</option>
+    <option value="EMPRESARIAL">Empresarial</option>
+  </select>
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroEstado($any($event.target).value)">
+    <option value="TODOS">Todos los estados</option>
+    <option value="ACTIVAS">Activas</option>
+    <option value="INACTIVAS">Inactivas</option>
+  </select>
+  <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()" [disabled]="cargando()">
+    <ui-icon name="refresh" [size]="16" />
+    Actualizar
+  </button>
+</div>
+
+<div class="table-card">
+  @if (cargando()) {
+    <div class="loading">
+      <span class="ui-spinner"></span>
+      Cargando cuentas…
+    </div>
+  } @else if (error()) {
+    <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
+      <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  } @else if (filtrados().length === 0) {
+    <ui-empty
+      icono="bank"
+      [titulo]="busqueda() || filtroTipo() !== 'TODOS' || filtroEstado() !== 'TODOS' ? 'Sin resultados' : 'Aún no hay cuentas'"
+      [mensaje]="busqueda() || filtroTipo() !== 'TODOS' || filtroEstado() !== 'TODOS'
+        ? 'Ninguna cuenta coincide con los filtros.'
+        : 'Abre tu primera cuenta para empezar.'"
+    >
+      @if (!busqueda() && filtroTipo() === 'TODOS' && filtroEstado() === 'TODOS') {
+        <button *hasPermiso="permisos.CREAR_CUENTAS" type="button" class="ui-btn ui-btn--primary ui-btn--sm" (click)="abrirCrear()">
+          <ui-icon name="plus" [size]="16" /> Nueva cuenta
+        </button>
+      }
+    </ui-empty>
+  } @else {
+    <div class="ui-table-wrap">
+      <table class="ui-table" appColumnasRedimensionables>
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Titular</th>
+            <th>Tipo</th>
+            <th>Saldo</th>
+            <th>Estado</th>
+            <th>Creada</th>
+            <th>Actualizada</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cuenta of paginados(); track cuenta.id) {
+            <tr>
+              <td class="ui-table__primary">{{ cuenta.numeroCuenta }}</td>
+              <td>{{ cuenta.titular }}</td>
+              <td>{{ tipoLabel(cuenta.tipoCuenta) }}</td>
+              <td class="money">{{ soles(cuenta.saldo) }}</td>
+              <td>
+                @if (cuenta.activo) {
+                  <span class="ui-badge ui-badge--success"><span class="ui-dot"></span> Activa</span>
+                } @else {
+                  <span class="ui-badge ui-badge--neutral"><span class="ui-dot"></span> Inactiva</span>
+                }
+              </td>
+              <td class="u-muted">{{ cuenta.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="u-muted">{{ cuenta.actualizadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <div class="row-actions">
+                  <button
+                    *hasPermiso="permisos.MODIFICAR_CUENTAS"
+                    type="button"
+                    class="ui-icon-btn"
+                    title="Editar"
+                    (click)="abrirEditar(cuenta)"
+                  >
+                    <ui-icon name="edit" [size]="18" />
+                  </button>
+                  <button
+                    *hasPermiso="permisos.CAMBIAR_ESTADO_CUENTAS"
+                    type="button"
+                    class="ui-icon-btn"
+                    [class.ui-icon-btn--danger]="cuenta.activo"
+                    [title]="cuenta.activo ? 'Desactivar cuenta' : 'Activar cuenta'"
+                    (click)="alternarActivo(cuenta)"
+                  >
+                    <ui-icon name="power" [size]="18" />
+                  </button>
+                  <button
+                    *hasPermiso="permisos.ELIMINAR_CUENTAS"
+                    type="button"
+                    class="ui-icon-btn ui-icon-btn--danger"
+                    title="Eliminar"
+                    (click)="confirmarEliminar(cuenta)"
+                  >
+                    <ui-icon name="trash" [size]="18" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ui-paginador
+      [pagina]="paginaActual()"
+      [total]="filtrados().length"
+      [porPagina]="porPagina()"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  }
+</div>
+
+<ui-modal
+  [abierto]="formAbierto()"
+  [titulo]="editando() ? 'Editar cuenta' : 'Nueva cuenta'"
+  [subtitulo]="editando() ? 'Actualiza los datos de tu cuenta.' : 'Abre una cuenta bancaria nueva.'"
+  (cerrar)="cerrarForm()"
+>
+  <form class="grid-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <div class="ui-field">
+      <label class="ui-label">Número de cuenta</label>
+      <input
+        class="ui-input"
+        [class.ui-input--invalid]="campoInvalido('numeroCuenta')"
+        formControlName="numeroCuenta"
+        placeholder="Automático si lo dejas vacío"
+      />
+      @if (campoInvalido('numeroCuenta')) {
+        <span class="ui-error">Usa entre 6 y 30 dígitos o guiones.</span>
+      } @else {
+        <span class="form-hint">Déjalo vacío para generar el número automáticamente.</span>
+      }
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-label">Tipo de cuenta <span class="ui-required">*</span></label>
+      <select class="ui-input" formControlName="tipoCuenta">
+        <option value="AHORRO">Ahorro</option>
+        <option value="CORRIENTE">Corriente</option>
+        <option value="EMPRESARIAL">Empresarial</option>
+      </select>
+      @if (campoInvalido('tipoCuenta')) {
+        <span class="ui-error">Selecciona un tipo de cuenta.</span>
+      }
+    </div>
+
+    <div class="ui-field">
+      <label class="ui-label">Saldo <span class="ui-required">*</span></label>
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        class="ui-input"
+        [class.ui-input--invalid]="campoInvalido('saldo')"
+        formControlName="saldo"
+      />
+      @if (campoInvalido('saldo')) {
+        <span class="ui-error">El saldo debe ser mayor o igual a cero.</span>
+      }
+    </div>
+
+    @if (editando(); as cuenta) {
+      <div class="ui-field">
+        <label class="ui-label">Estado actual</label>
+        <div class="state-readonly">
+          @if (cuenta.activo) {
+            <span class="ui-badge ui-badge--success"><span class="ui-dot"></span> Activa</span>
+          } @else {
+            <span class="ui-badge ui-badge--neutral"><span class="ui-dot"></span> Inactiva</span>
+          }
+        </div>
+      </div>
+    }
+  </form>
+
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--primary" (click)="guardar()" [disabled]="guardando()">
+      @if (guardando()) {
+        <span class="ui-spinner" style="width:16px;height:16px"></span>
+      }
+      {{ editando() ? 'Guardar cambios' : 'Crear cuenta' }}
+    </button>
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="eliminarAbierto()"
+  ancho="sm"
+  [compacto]="true"
+  titulo="Eliminar cuenta"
+  (cerrar)="eliminarAbierto.set(false)"
+>
+  @if (aEliminar(); as cuenta) {
+    <div class="confirm">
+      <span class="confirm__icon"><ui-icon name="trash" [size]="22" /></span>
+      <div class="confirm__text">
+        <p class="confirm__title">¿Eliminar la cuenta {{ cuenta.numeroCuenta }}?</p>
+        <p class="confirm__desc">Esta acción no se puede deshacer.</p>
+      </div>
+    </div>
+  }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="eliminarAbierto.set(false)">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--danger" (click)="eliminar()" [disabled]="eliminando()">
+      @if (eliminando()) {
+        <span class="ui-spinner" style="width:16px;height:16px"></span>
+      }
+      Eliminar
+    </button>
+  </div>
+</ui-modal>

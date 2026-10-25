@@ -12,11 +12,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificaciones = inject(Notificaciones);
   const sesionStore = inject(SesionStore);
   const router = inject(Router);
-  const esLogin = req.url.includes('/auth/login');
+  // Login y registro muestran el error dentro de su propio formulario.
+  const esAccesoPublico = req.url.includes('/auth/login') || req.url.includes('/auth/registro');
 
   return next(req).pipe(
     catchError((err: unknown) => {
-      if (esLogin || !(err instanceof HttpErrorResponse)) {
+      if (esAccesoPublico || !(err instanceof HttpErrorResponse)) {
         return throwError(() => err);
       }
 

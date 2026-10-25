@@ -227,6 +227,23 @@
       <input class="ui-input" formControlName="telefono" placeholder="Opcional" />
     </div>
 
+    @if (!editando() && puedeAsignarRoles()) {
+      <div class="ui-field">
+        <label class="ui-label">Rol inicial</label>
+        <select class="ui-input" formControlName="rolId" [disabled]="cargandoRoles()">
+          <option [ngValue]="null">Sin rol</option>
+          @for (rol of catalogoRoles(); track rol.id) {
+            <option [ngValue]="rol.id">
+              {{ rol.nombre }}{{ rol.activo ? '' : ' (inactivo)' }}
+            </option>
+          }
+        </select>
+        <span class="form-hint">
+          Elige ANALISTA para crear un analista. Los registros públicos reciben USUARIO.
+        </span>
+      </div>
+    }
+
     <label class="check">
       <input type="checkbox" formControlName="activo" />
       <span class="check__box"><ui-icon name="check" [size]="14" /></span>

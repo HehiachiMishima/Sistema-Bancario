@@ -6,14 +6,20 @@ import oracle.common.support.Auditoria;
 import oracle.common.support.Trazas;
 import oracle.common.config.Transacciones;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import oracle.common.exception.ConflictoException;
 import oracle.common.exception.NoAutorizadoException;
 import oracle.common.exception.OperacionNoPermitidaException;
 import oracle.common.security.JwtService;
+import oracle.admin.model.Rol;
 import oracle.admin.model.Usuario;
+import oracle.admin.model.UsuarioRol;
 import oracle.admin.repository.ResolucionRepository;
+import oracle.admin.repository.RolRepository;
 import oracle.admin.repository.UsuarioRepository;
+import oracle.admin.repository.UsuarioRolRepository;
 import oracle.common.response.ApiResponse;
 import oracle.admin.response.UsuarioResponse;
 import oracle.common.security.LoginRateLimiter;
@@ -29,6 +35,8 @@ import reactor.core.scheduler.Schedulers;
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioRolRepository usuarioRolRepository;
+    private final RolRepository rolRepository;
     private final ResolucionRepository resolucionRepository;
     private final JwtService jwtService;
     private final LoginRateLimiter rateLimiter;
@@ -44,6 +52,8 @@ public class AuthService {
 
     public AuthService(
             UsuarioRepository usuarioRepository,
+            UsuarioRolRepository usuarioRolRepository,
+            RolRepository rolRepository,
             ResolucionRepository resolucionRepository,
             JwtService jwtService,
             LoginRateLimiter rateLimiter,
@@ -52,6 +62,8 @@ public class AuthService {
             Transacciones transacciones) {
         this.autorizacionCache = autorizacionCache;
         this.usuarioRepository = usuarioRepository;
+        this.usuarioRolRepository = usuarioRolRepository;
+        this.rolRepository = rolRepository;
         this.resolucionRepository = resolucionRepository;
         this.jwtService = jwtService;
         this.rateLimiter = rateLimiter;
@@ -93,6 +105,51 @@ public class AuthService {
                             .toList();
                     return ApiResponse.ok("Sesion vigente.", new SesionResponse(UsuarioResponse.of(usuario), permisos));
                 })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * Autorregistro publico: crea el usuario siempre con el rol USUARIO.
+     * Los roles ANALISTA se asignan desde el panel de administracion.
+     */
+    public Mono<ApiResponse<UsuarioResponse>> registrar(RegistroRequest peticion) {
+        return Mono.fromCallable(() -> Trazas.medir(log,
+                        "AuthService.registrar usuario=" + peticion.usuario(),
+                        () -> transacciones.ejecutar(() -> {
+                            if (usuarioRepository.existsByUsuario(peticion.usuario().trim())) {
+                                throw new ConflictoException("Ya existe un usuario con el nombre '"
+                                        + peticion.usuario().trim() + "'.");
+                            }
+                            if (usuarioRepository.existsByEmail(peticion.email().trim())) {
+                                throw new ConflictoException("Ya existe un usuario con el email '"
+                                        + peticion.email().trim() + "'.");
+                            }
+
+                            Usuario usuario = new Usuario();
+                            usuario.setUsuario(peticion.usuario().trim());
+                            usuario.setContrasena(passwordEncoder.encode(peticion.contrasena()));
+                            usuario.setNombre(peticion.nombre().trim());
+                            usuario.setApellido(peticion.apellido().trim());
+                            usuario.setEmail(peticion.email().trim());
+                            usuario.setTelefono(peticion.telefono());
+                            usuario.setActivo(Boolean.TRUE);
+                            Auditoria.alCrear(usuario, ActorActual.SISTEMA);
+                            usuarioRepository.save(usuario);
+
+                            Rol rol = rolRepository.findByNombre("USUARIO")
+                                    .orElseThrow(() -> new OperacionNoPermitidaException(
+                                            "El rol USUARIO no esta configurado en el sistema."));
+                            UsuarioRol asignacion = new UsuarioRol();
+                            asignacion.setUsuario(usuario);
+                            asignacion.setRol(rol);
+                            asignacion.setCreadoPor(ActorActual.SISTEMA);
+                            asignacion.setCreadoEn(LocalDateTime.now());
+                            usuarioRolRepository.save(asignacion);
+                            autorizacionCache.invalidar(usuario.getId());
+
+                            return ApiResponse.ok("Registro completado. Ya puedes iniciar sesion.",
+                                    UsuarioResponse.of(usuario));
+                        })))
                 .subscribeOn(Schedulers.boundedElastic());
     }
 

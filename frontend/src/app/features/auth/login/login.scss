@@ -138,6 +138,30 @@
   }
 }
 
+.login__switch {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--fs-md);
+  color: var(--text-2);
+
+  a {
+    color: var(--text);
+    font-weight: 600;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.registro-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+
+  @include bp.down(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
 .login__toggle {
   position: absolute;
   right: var(--space-2);

@@ -3,7 +3,7 @@ import { Service, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, AuthResponse, LoginRequest } from '../models';
+import { ApiResponse, AuthResponse, LoginRequest, RegistroRequest, Usuario } from '../models';
 import { Carga } from './carga';
 import { SesionStore } from './sesion';
 
@@ -35,6 +35,12 @@ export class Auth {
           }),
         ),
       );
+  }
+
+  registrar(peticion: RegistroRequest): Observable<Usuario> {
+    return this.http
+      .post<ApiResponse<Usuario>>(`${this.base}/auth/registro`, peticion)
+      .pipe(map((respuesta) => respuesta.datos));
   }
 
   cerrarSesion(redirigir = true): void {

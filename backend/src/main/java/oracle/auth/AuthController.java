@@ -4,6 +4,7 @@ import oracle.common.support.ActorActual;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import oracle.admin.response.UsuarioResponse;
 import oracle.common.response.ApiResponse;
 import oracle.common.security.LoginRateLimiter;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,6 +42,13 @@ public class AuthController {
         rateLimiter.verificar(claveUsuario);
         rateLimiter.verificarPorIp(ip);
         return authService.login(peticion, claveUsuario, claveIp);
+    }
+
+    /** Autorregistro publico: el usuario nace con rol USUARIO. */
+    @PostMapping("/registro")
+    @PreAuthorize("permitAll()")
+    public Mono<ApiResponse<UsuarioResponse>> registro(@Valid @RequestBody RegistroRequest peticion) {
+        return authService.registrar(peticion);
     }
 
     /** Sesion vigente (usuario + permisos actuales) del portador del token. */

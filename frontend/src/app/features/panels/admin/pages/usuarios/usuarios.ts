@@ -102,7 +102,13 @@ export class Usuarios {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
     telefono: ['', [Validators.maxLength(20)]],
     activo: [true],
+    rolId: [null as number | null],
   });
+
+  readonly puedeAsignarRoles = computed(() =>
+    this.permisosSesion().includes(PERMISOS.ASIGNAR_ROLES) &&
+    this.permisosSesion().includes(PERMISOS.VER_ROLES),
+  );
 
   readonly eliminarAbierto = signal(false);
   readonly aEliminar = signal<Usuario | null>(null);
@@ -195,10 +201,22 @@ export class Usuarios {
 
   abrirCrear(): void {
     this.editando.set(null);
-    this.formulario.reset({ usuario: '', contrasena: '', nombre: '', apellido: '', email: '', telefono: '', activo: true });
+    this.formulario.reset({
+      usuario: '',
+      contrasena: '',
+      nombre: '',
+      apellido: '',
+      email: '',
+      telefono: '',
+      activo: true,
+      rolId: null,
+    });
     this.formulario.controls.contrasena.setValidators([Validators.required, Validators.minLength(6)]);
     this.formulario.controls.contrasena.updateValueAndValidity();
     this.formAbierto.set(true);
+    if (this.puedeAsignarRoles()) {
+      this.cargarRolesCatalogo();
+    }
   }
 
   abrirEditar(usuario: Usuario): void {
@@ -211,6 +229,7 @@ export class Usuarios {
       email: usuario.email,
       telefono: usuario.telefono ?? '',
       activo: usuario.activo,
+      rolId: null,
     });
     this.formulario.controls.contrasena.setValidators([Validators.minLength(6)]);
     this.formulario.controls.contrasena.updateValueAndValidity();
@@ -256,6 +275,7 @@ export class Usuarios {
             email: valores.email,
             telefono: valores.telefono || null,
             activo: valores.activo,
+            rolId: valores.rolId,
           })
           .pipe(finalize(() => this.guardando.set(false)));
 
@@ -307,6 +327,39 @@ export class Usuarios {
         },
         error: (err: unknown) => this.notificaciones.error('No se pudo eliminar', mensajeDeError(err)),
       });
+  }
+
+  /** Carga el catalogo de roles para elegir el rol inicial en el alta. */
+  private cargarRolesCatalogo(): void {
+    if (this.catalogoRoles().length > 0) {
+      this.asignarRolPorDefecto();
+      return;
+    }
+    if (this.cargandoRoles()) {
+      return;
+    }
+    this.cargandoRoles.set(true);
+    this.rolesApi
+      .listar()
+      .pipe(finalize(() => this.cargandoRoles.set(false)))
+      .subscribe({
+        next: (roles) => {
+          this.catalogoRoles.set(roles);
+          this.asignarRolPorDefecto();
+        },
+        error: (err: unknown) =>
+          this.notificaciones.error('No se pudieron cargar los roles', mensajeDeError(err)),
+      });
+  }
+
+  private asignarRolPorDefecto(): void {
+    if (this.editando() || this.formulario.controls.rolId.value) {
+      return;
+    }
+    const rolUsuario = this.catalogoRoles().find((rol) => rol.nombre === 'USUARIO' && rol.activo);
+    if (rolUsuario) {
+      this.formulario.controls.rolId.setValue(rolUsuario.id);
+    }
   }
 
   abrirRoles(usuario: Usuario): void {

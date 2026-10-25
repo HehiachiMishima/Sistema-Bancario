@@ -20,7 +20,7 @@ import { ChangeDetectionStrategy, Component, afterNextRender, computed, input, s
         </g>
       </svg>
       <div class="gauge__center">
-        <span class="gauge__num">{{ valor() }}<span class="gauge__pct">%</span></span>
+        <span class="gauge__num">{{ valor() }}</span>
         <span class="gauge__caption">{{ etiqueta() }}</span>
       </div>
     </div>

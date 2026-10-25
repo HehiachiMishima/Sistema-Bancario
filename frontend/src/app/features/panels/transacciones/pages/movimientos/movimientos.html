@@ -1,0 +1,384 @@
+<header class="page-head">
+  <div>
+    <h1 class="page-head__title">Movimientos</h1>
+    <p class="page-head__sub">Registra y consulta tus transacciones.</p>
+  </div>
+  @if (puedeCrear()) {
+    <button type="button" class="ui-btn ui-btn--primary" (click)="abrirCrear()">
+      <ui-icon name="plus" [size]="18" />
+      Nuevo movimiento
+    </button>
+  }
+</header>
+
+<div class="toolbar">
+  <div class="ui-search toolbar__grow">
+    <ui-icon name="search" [size]="18" />
+    <input
+      type="search"
+      class="ui-input"
+      placeholder="Buscar por referencia, cuenta o concepto…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
+  </div>
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroTipo($any($event.target).value)">
+    <option value="TODOS">Todos los tipos</option>
+    <option value="DEPOSITO">Depósito</option>
+    <option value="RETIRO">Retiro</option>
+    <option value="TRANSFERENCIA">Transferencia</option>
+    <option value="PAGO">Pago</option>
+  </select>
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroEstado($any($event.target).value)">
+    <option value="TODOS">Todos los estados</option>
+    <option value="PENDIENTE">Pendiente</option>
+    <option value="APROBADA">Aprobada</option>
+    <option value="RECHAZADA">Rechazada</option>
+  </select>
+  <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()" [disabled]="cargando()">
+    <ui-icon name="refresh" [size]="16" />
+    Actualizar
+  </button>
+</div>
+
+<div class="table-card">
+  @if (cargando()) {
+    <div class="loading">
+      <span class="ui-spinner"></span>
+      Cargando movimientos…
+    </div>
+  } @else if (error()) {
+    <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
+      <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  } @else if (filtrados().length === 0) {
+    <ui-empty
+      icono="transfer"
+      [titulo]="busqueda() || filtroEstado() !== 'TODOS' || filtroTipo() !== 'TODOS' ? 'Sin resultados' : 'Aún no hay movimientos'"
+      [mensaje]="busqueda() || filtroEstado() !== 'TODOS' || filtroTipo() !== 'TODOS'
+        ? 'Ningún movimiento coincide con los filtros.'
+        : 'Registra tu primer movimiento para empezar.'"
+    >
+      @if (!busqueda() && filtroEstado() === 'TODOS' && filtroTipo() === 'TODOS' && puedeCrear()) {
+        <button type="button" class="ui-btn ui-btn--primary ui-btn--sm" (click)="abrirCrear()">
+          <ui-icon name="plus" [size]="16" /> Nuevo movimiento
+        </button>
+      }
+    </ui-empty>
+  } @else {
+    <div class="ui-table-wrap">
+      <table class="ui-table" appColumnasRedimensionables>
+        <thead>
+          <tr>
+            <th>Referencia</th>
+            <th>Tipo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (movimiento of paginados(); track movimiento.id) {
+            <tr>
+              <td>
+                <span class="ref">{{ movimiento.referencia }}</span>
+                @if (movimiento.descripcion) {
+                  <span class="ref-sub" [title]="movimiento.descripcion">{{ movimiento.descripcion }}</span>
+                }
+              </td>
+              <td>{{ tipoLabel(movimiento.tipoTransaccion) }}</td>
+              <td>{{ movimiento.cuentaOrigenNumero || '—' }}</td>
+              <td>{{ movimiento.cuentaDestinoNumero || '—' }}</td>
+              <td class="money">{{ soles(movimiento.monto) }}</td>
+              <td>
+                <span [class]="badgeClass(movimiento.estado)">
+                  <span class="ui-dot"></span> {{ estadoLabel(movimiento.estado) }}
+                </span>
+              </td>
+              <td class="u-muted">{{ movimiento.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                @if (puedeResolver()) {
+                  <div class="row-actions">
+                    @if (movimiento.estado === 'PENDIENTE') {
+                      <button
+                        type="button"
+                        class="ui-icon-btn"
+                        title="Aprobar"
+                        (click)="pedirDecision(movimiento, 'APROBADA')"
+                      >
+                        <ui-icon name="check" [size]="18" />
+                      </button>
+                      <button
+                        type="button"
+                        class="ui-icon-btn ui-icon-btn--danger"
+                        title="Rechazar"
+                        (click)="pedirDecision(movimiento, 'RECHAZADA')"
+                      >
+                        <ui-icon name="xCircle" [size]="18" />
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="ui-icon-btn"
+                      title="Editar / resolver"
+                      (click)="abrirEditar(movimiento)"
+                    >
+                      <ui-icon name="edit" [size]="18" />
+                    </button>
+                    <button
+                      type="button"
+                      class="ui-icon-btn ui-icon-btn--danger"
+                      title="Eliminar"
+                      (click)="confirmarEliminar(movimiento)"
+                    >
+                      <ui-icon name="trash" [size]="18" />
+                    </button>
+                  </div>
+                } @else {
+                  <span class="u-muted">Solo lectura</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ui-paginador
+      [pagina]="paginaActual()"
+      [total]="filtrados().length"
+      [porPagina]="porPagina()"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  }
+</div>
+
+<ui-modal
+  [abierto]="formAbierto()"
+  [titulo]="editando() ? 'Resolver movimiento' : 'Nuevo movimiento'"
+  [subtitulo]="editando()
+    ? 'Ajusta el monto, el estado o el concepto del movimiento.'
+    : 'Registra una operación; quedará pendiente de resolución.'"
+  (cerrar)="cerrarForm()"
+>
+  <form class="grid-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    @if (editando(); as movimiento) {
+      <div class="resumen field-full">
+        <div class="resumen__item">
+          <span class="resumen__label">Referencia</span>
+          <span class="resumen__value">{{ movimiento.referencia }}</span>
+        </div>
+        <div class="resumen__item">
+          <span class="resumen__label">Tipo</span>
+          <span class="resumen__value">{{ tipoLabel(movimiento.tipoTransaccion) }}</span>
+        </div>
+        <div class="resumen__item">
+          <span class="resumen__label">Origen</span>
+          <span class="resumen__value">{{ movimiento.cuentaOrigenNumero || '—' }}</span>
+        </div>
+        <div class="resumen__item">
+          <span class="resumen__label">Destino</span>
+          <span class="resumen__value">{{ movimiento.cuentaDestinoNumero || '—' }}</span>
+        </div>
+      </div>
+    } @else {
+      <div class="ui-field">
+        <label class="ui-label">Tipo de movimiento <span class="ui-required">*</span></label>
+        <select
+          class="ui-input"
+          formControlName="tipoTransaccion"
+          (change)="cambiarTipo($any($event.target).value)"
+        >
+          <option value="DEPOSITO">Depósito</option>
+          <option value="RETIRO">Retiro</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="PAGO">Pago</option>
+        </select>
+      </div>
+
+      @if (cargandoCuentas()) {
+        <div class="loading field-full">
+          <span class="ui-spinner"></span>
+          Cargando cuentas…
+        </div>
+      } @else {
+        @if (requiereOrigen()) {
+          <div class="ui-field">
+            <label class="ui-label">Cuenta origen <span class="ui-required">*</span></label>
+            <select class="ui-input" formControlName="cuentaOrigenId">
+              <option [ngValue]="null">Selecciona una cuenta…</option>
+              @for (cuenta of cuentasDisponibles(); track cuenta.id) {
+                <option [ngValue]="cuenta.id">
+                  {{ cuenta.numeroCuenta }} · {{ soles(cuenta.saldo) }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (requiereDestino()) {
+          <div class="ui-field">
+            <label class="ui-label">Cuenta destino <span class="ui-required">*</span></label>
+            <select class="ui-input" formControlName="cuentaDestinoId">
+              <option [ngValue]="null">Selecciona una cuenta…</option>
+              @for (cuenta of cuentasDisponibles(); track cuenta.id) {
+                <option [ngValue]="cuenta.id">
+                  {{ cuenta.numeroCuenta }} · {{ soles(cuenta.saldo) }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (cuentasDisponibles().length === 0) {
+          <p class="form-hint field-full">
+            No tienes cuentas activas. Abre una cuenta para poder registrar movimientos.
+          </p>
+        }
+      }
+    }
+
+    <div class="ui-field">
+      <label class="ui-label">Monto <span class="ui-required">*</span></label>
+      <input
+        type="number"
+        step="0.01"
+        min="0.01"
+        class="ui-input"
+        [class.ui-input--invalid]="campoInvalido('monto')"
+        formControlName="monto"
+      />
+      @if (campoInvalido('monto')) {
+        <span class="ui-error">El monto debe ser mayor que cero.</span>
+      }
+    </div>
+
+    @if (editando()) {
+      <div class="ui-field">
+        <label class="ui-label">Estado <span class="ui-required">*</span></label>
+        <select class="ui-input" formControlName="estado">
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="APROBADA">Aprobada</option>
+          <option value="RECHAZADA">Rechazada</option>
+        </select>
+      </div>
+    }
+
+    <div class="ui-field field-full">
+      <label class="ui-label">Concepto</label>
+      <textarea
+        class="ui-textarea"
+        [class.ui-textarea--invalid]="campoInvalido('descripcion')"
+        formControlName="descripcion"
+        placeholder="Opcional: motivo o nota del movimiento"
+      ></textarea>
+      @if (campoInvalido('descripcion')) {
+        <span class="ui-error">El concepto no puede exceder 255 caracteres.</span>
+      }
+    </div>
+
+    @if (!editando()) {
+      <p class="notice field-full">
+        <ui-icon name="info" [size]="16" />
+        Los movimientos nuevos quedan <strong>PENDIENTES</strong> hasta que un analista los resuelva.
+      </p>
+    } @else {
+      <p class="notice field-full">
+        <ui-icon name="info" [size]="16" />
+        Aprobar aplica el monto a los saldos; rechazar o volver a pendiente revierte el efecto.
+      </p>
+    }
+  </form>
+
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--primary" (click)="guardar()" [disabled]="guardando()">
+      @if (guardando()) {
+        <span class="ui-spinner" style="width:16px;height:16px"></span>
+      }
+      {{ editando() ? 'Guardar resolución' : 'Registrar movimiento' }}
+    </button>
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="decision() !== null"
+  ancho="sm"
+  [compacto]="true"
+  [titulo]="decision()?.estado === 'APROBADA' ? 'Aprobar movimiento' : 'Rechazar movimiento'"
+  [subtitulo]="decision()?.transaccion?.referencia ?? ''"
+  (cerrar)="cerrarDecision()"
+>
+  @if (decision(); as d) {
+    <div class="decision">
+      <span class="decision__icon" [class.decision__icon--danger]="d.estado === 'RECHAZADA'">
+        <ui-icon [name]="d.estado === 'APROBADA' ? 'check' : 'xCircle'" [size]="22" />
+      </span>
+      <div class="decision__text">
+        <p class="decision__title">
+          {{ d.estado === 'APROBADA' ? '¿Aprobar este movimiento?' : '¿Rechazar este movimiento?' }}
+        </p>
+        <p class="decision__desc">
+          {{ tipoLabel(d.transaccion.tipoTransaccion) }} por
+          <strong>{{ soles(d.transaccion.monto) }}</strong>
+          @if (d.estado === 'APROBADA') {
+            · se aplicará a los saldos de las cuentas.
+          } @else {
+            · no se aplicará a los saldos.
+          }
+        </p>
+      </div>
+    </div>
+  }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarDecision()">Cancelar</button>
+    <button
+      type="button"
+      class="ui-btn"
+      [class.ui-btn--primary]="decision()?.estado === 'APROBADA'"
+      [class.ui-btn--danger]="decision()?.estado === 'RECHAZADA'"
+      (click)="confirmarDecision()"
+      [disabled]="decidiendo()"
+    >
+      @if (decidiendo()) {
+        <span class="ui-spinner" style="width:16px;height:16px"></span>
+      }
+      {{ decision()?.estado === 'APROBADA' ? 'Aprobar' : 'Rechazar' }}
+    </button>
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="eliminarAbierto()"
+  ancho="sm"
+  [compacto]="true"
+  titulo="Eliminar movimiento"
+  (cerrar)="eliminarAbierto.set(false)"
+>
+  @if (aEliminar(); as movimiento) {
+    <div class="confirm">
+      <span class="confirm__icon"><ui-icon name="trash" [size]="22" /></span>
+      <div class="confirm__text">
+        <p class="confirm__title">¿Eliminar el movimiento {{ movimiento.referencia }}?</p>
+        <p class="confirm__desc">
+          Si estaba aprobado, el monto se revierte de los saldos. Esta acción no se puede deshacer.
+        </p>
+      </div>
+    </div>
+  }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="eliminarAbierto.set(false)">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--danger" (click)="eliminar()" [disabled]="eliminando()">
+      @if (eliminando()) {
+        <span class="ui-spinner" style="width:16px;height:16px"></span>
+      }
+      Eliminar
+    </button>
+  </div>
+</ui-modal>
