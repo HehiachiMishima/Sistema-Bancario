@@ -1,0 +1,148 @@
+<header class="page-head">
+  <div>
+    <h1 class="page-head__title">{{ saludo() }}{{ usuario() ? ', ' + usuario()!.nombre : '' }}</h1>
+    <p class="page-head__sub">Resumen de movimientos de usuarios y casos por resolver.</p>
+  </div>
+</header>
+
+@if (error()) {
+  <ui-empty icono="alerta" titulo="No se pudo cargar el dashboard" [mensaje]="error()!">
+    <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
+      <ui-icon name="refresh" [size]="16" /> Reintentar
+    </button>
+  </ui-empty>
+} @else {
+  <section class="metrics">
+    @for (metrica of metricas(); track metrica.id) {
+      <article class="metric" [class]="'metric--' + metrica.acento">
+        <span class="metric__glow" aria-hidden="true"></span>
+        <div class="metric__top">
+          <span class="metric__icon"><ui-icon [name]="metrica.icono" [size]="20" /></span>
+          <span class="metric__label">{{ metrica.etiqueta }}</span>
+        </div>
+        @if (cargando()) {
+          <span class="metric__skeleton ui-skeleton"></span>
+        } @else {
+          <span class="metric__value metric__value--money">{{ metrica.valor ?? '—' }}</span>
+        }
+        <span class="metric__detail">{{ metrica.detalle }}</span>
+      </article>
+    }
+  </section>
+
+  @if (hayDatos()) {
+    <section class="charts">
+      <h2 class="section-title">Estadísticas</h2>
+      <div class="charts__grid">
+        <article class="chart-card">
+          <header class="chart-card__head">
+            <div>
+              <h3 class="chart-card__title">Movimientos por estado</h3>
+              <p class="chart-card__sub">Pendientes, aprobados y rechazados</p>
+            </div>
+          </header>
+          <div class="chart-card__body">
+            <ui-donut [segmentos]="segmentosEstado()" centro="Movimientos" titulo="Movimientos por estado" />
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <header class="chart-card__head">
+            <div>
+              <h3 class="chart-card__title">Volumen por tipo</h3>
+              <p class="chart-card__sub">Cantidad de operaciones registradas</p>
+            </div>
+          </header>
+          <div class="chart-card__body">
+            <ui-bars [datos]="barrasTipo()" [altura]="240" />
+          </div>
+        </article>
+
+        <article class="chart-card">
+          <header class="chart-card__head">
+            <div>
+              <h3 class="chart-card__title">Aprobación automática</h3>
+              <p class="chart-card__sub">Movimientos aprobados por reglas</p>
+            </div>
+          </header>
+          <div class="chart-card__body chart-card__body--center">
+            <ui-gauge [valor]="pctAuto()" etiqueta="Automáticas" color="var(--success)" [tamano]="200" />
+          </div>
+        </article>
+      </div>
+    </section>
+  } @else if (!cargando()) {
+    <section class="empty-block">
+      <ui-empty
+        icono="analytics"
+        titulo="Aún no hay movimientos de usuarios"
+        mensaje="Cuando los usuarios registren transferencias, aparecerán aquí con su evaluación de reglas."
+      >
+        <a class="ui-btn ui-btn--primary ui-btn--sm" [routerLink]="[panelRuta, 'transacciones']">
+          <ui-icon name="transfer" [size]="16" /> Ver transacciones
+        </a>
+      </ui-empty>
+    </section>
+  }
+
+  @if (casosRecientes().length > 0) {
+    <section class="recent">
+      <div class="section-head">
+        <h2 class="section-title">Casos recientes</h2>
+        <a class="section-link" [routerLink]="[panelRuta, 'casos']">
+          Ver todos <ui-icon name="chevronRight" [size]="16" />
+        </a>
+      </div>
+      <div class="table-card">
+        <div class="ui-table-wrap">
+          <table class="ui-table">
+            <thead>
+              <tr>
+                <th>Caso</th>
+                <th>Referencia</th>
+                <th>Origen</th>
+                <th>Destino</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (caso of casosRecientes(); track caso.id) {
+                <tr>
+                  <td class="ui-table__primary">{{ caso.numeroCaso }}</td>
+                  <td>{{ caso.transaccion.referencia }}</td>
+                  <td>{{ caso.cuentaOrigenNumero || '—' }}</td>
+                  <td>{{ caso.cuentaDestinoNumero || '—' }}</td>
+                  <td class="money">{{ soles(caso.transaccion.monto) }}</td>
+                  <td>
+                    <span [class]="badgeCasoClass(caso.estado)">
+                      <span class="ui-dot"></span> {{ estadoCasoLabel(caso.estado) }}
+                    </span>
+                  </td>
+                  <td class="u-muted">{{ caso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  }
+
+  <section class="quick">
+    <h2 class="section-title">Accesos rápidos</h2>
+    <div class="quick__grid">
+      @for (modulo of modulos(); track modulo.id) {
+        <a class="quick__card" [routerLink]="[panelRuta, modulo.ruta]">
+          <span class="quick__icon"><ui-icon [name]="modulo.icono" [size]="20" /></span>
+          <span class="quick__text">
+            <span class="quick__name">{{ modulo.nombre }}</span>
+            <span class="quick__desc">{{ modulo.descripcion }}</span>
+          </span>
+          <ui-icon name="chevronRight" [size]="18" class="quick__arrow" />
+        </a>
+      }
+    </div>
+  </section>
+}

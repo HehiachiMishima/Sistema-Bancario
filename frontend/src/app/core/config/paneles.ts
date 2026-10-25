@@ -123,12 +123,37 @@ export const PANEL_TRANSACCIONES: PanelDef = {
 export const PANEL_ANALISTA: PanelDef = {
   id: 'analista',
   nombre: 'Analista',
-  descripcion: 'Espacio reservado para la resolución de casos.',
+  descripcion: 'Supervisión de movimientos y resolución de casos.',
   icono: 'analytics',
   ruta: '/analista',
   permiso: PERMISOS.PANEL_ANALISTA,
   acento: 'success',
-  modulos: [],
+  modulos: [
+    {
+      id: 'dashboard',
+      nombre: 'Dashboard',
+      descripcion: 'Resumen de movimientos, casos y aprobaciones automáticas.',
+      icono: 'dashboard',
+      ruta: 'dashboard',
+      permiso: PERMISOS.DASHBOARD_TRANSACCIONES,
+    },
+    {
+      id: 'transacciones',
+      nombre: 'Transacciones',
+      descripcion: 'Movimientos de todos los usuarios con rol USUARIO.',
+      icono: 'transfer',
+      ruta: 'transacciones',
+      permiso: PERMISOS.VER_TRANSACCIONES,
+    },
+    {
+      id: 'casos',
+      nombre: 'Casos',
+      descripcion: 'Transacciones pendientes de revisión y resolución.',
+      icono: 'alertTriangle',
+      ruta: 'casos',
+      permiso: PERMISOS.RESOLVER_CASO,
+    },
+  ],
 };
 
 export const PANELES: PanelDef[] = [PANEL_ADMIN, PANEL_CUENTAS, PANEL_TRANSACCIONES, PANEL_ANALISTA];

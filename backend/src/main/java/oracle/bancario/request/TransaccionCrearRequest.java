@@ -9,13 +9,17 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 /**
- * Registro de un movimiento. El estado inicial siempre es PENDIENTE:
- * el usuario lo registra y el analista (RESOLVER_CASO) lo aprueba o rechaza.
+ * Registro de un movimiento. En una transferencia la cuenta destino puede
+ * ser de otro usuario y se identifica por numero. El estado inicial depende
+ * del motor de reglas: APROBADA automaticamente o PENDIENTE para el analista.
  */
 public record TransaccionCrearRequest(
         Long cuentaOrigenId,
 
         Long cuentaDestinoId,
+
+        @Size(max = 30, message = "El numero de cuenta destino no puede exceder 30 caracteres.")
+        String cuentaDestinoNumero,
 
         @NotBlank(message = "El tipo de transaccion es obligatorio.")
         @Pattern(regexp = "(?i)DEPOSITO|RETIRO|TRANSFERENCIA|PAGO",

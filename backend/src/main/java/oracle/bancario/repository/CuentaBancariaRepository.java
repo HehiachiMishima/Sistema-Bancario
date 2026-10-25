@@ -29,6 +29,9 @@ public interface CuentaBancariaRepository extends JpaRepository<CuentaBancaria, 
     @EntityGraph(attributePaths = "usuario")
     Optional<CuentaBancaria> findByIdAndUsuarioId(Long id, Long usuarioId);
 
+    @EntityGraph(attributePaths = "usuario")
+    Optional<CuentaBancaria> findByNumeroCuenta(String numeroCuenta);
+
     /** Bloquea la fila para aplicar o revertir saldos sin carreras. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM CuentaBancaria c WHERE c.id = :id")

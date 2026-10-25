@@ -1,5 +1,6 @@
 package oracle.bancario.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import oracle.bancario.model.Transaccion;
@@ -46,4 +47,35 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
             WHERE t.id = :id
             """)
     Optional<Transaccion> cargar(@Param("id") Long id);
+
+    /**
+     * Bandeja del analista: solo movimientos creados por usuarios con rol
+     * USUARIO, de cualquier titular, con cuentas y titulares resueltos.
+     */
+    @Query("""
+            SELECT t FROM Transaccion t
+            LEFT JOIN FETCH t.cuentaOrigen co
+            LEFT JOIN FETCH co.usuario cou
+            LEFT JOIN FETCH t.cuentaDestino cd
+            LEFT JOIN FETCH cd.usuario cdu
+            WHERE EXISTS (
+                SELECT 1 FROM UsuarioRol ur
+                WHERE ur.usuario.id = t.creadoPor AND ur.rol.nombre = 'USUARIO'
+            )
+              AND (:estado IS NULL OR t.estado = :estado)
+              AND (:tipo IS NULL OR t.tipoTransaccion = :tipo)
+            ORDER BY t.creadoEn DESC, t.id DESC
+            """)
+    List<Transaccion> buscarDeUsuarios(
+            @Param("estado") String estado,
+            @Param("tipo") String tipo);
+
+    long countByCuentaOrigenId(Long cuentaOrigenId);
+
+    long countByCuentaOrigenIdAndCuentaDestinoId(Long cuentaOrigenId, Long cuentaDestinoId);
+
+    long countByCuentaOrigenIdAndTipoTransaccion(Long cuentaOrigenId, String tipoTransaccion);
+
+    @Query("SELECT COALESCE(AVG(t.monto), 0) FROM Transaccion t WHERE t.cuentaOrigen.id = :cuentaOrigenId")
+    BigDecimal promedioMontoOrigen(@Param("cuentaOrigenId") Long cuentaOrigenId);
 }

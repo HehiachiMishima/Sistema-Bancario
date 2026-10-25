@@ -1,19 +1,29 @@
 export type TipoTransaccion = 'DEPOSITO' | 'RETIRO' | 'TRANSFERENCIA' | 'PAGO';
 export type EstadoTransaccion = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 
+export interface ReglaEvaluada {
+  regla: string;
+  titulo: string;
+  aprobada: boolean;
+  detalle: string;
+}
+
 export interface Transaccion {
   id: number;
   referencia: string;
   cuentaOrigenId: number | null;
   cuentaOrigenNumero: string | null;
+  cuentaOrigenTitular?: string | null;
   cuentaDestinoId: number | null;
   cuentaDestinoNumero: string | null;
+  cuentaDestinoTitular?: string | null;
   tipoTransaccion: TipoTransaccion | string;
   monto: number;
   estado: EstadoTransaccion | string;
   saldoOrigenPost: number | null;
   saldoDestinoPost: number | null;
   descripcion: string | null;
+  reglas?: ReglaEvaluada[];
   creadoPor: number;
   actualizadoPor: number;
   creadoEn: string;
@@ -23,6 +33,7 @@ export interface Transaccion {
 export interface TransaccionCrearRequest {
   cuentaOrigenId?: number | null;
   cuentaDestinoId?: number | null;
+  cuentaDestinoNumero?: string | null;
   tipoTransaccion: TipoTransaccion | string;
   monto: number;
   descripcion?: string | null;

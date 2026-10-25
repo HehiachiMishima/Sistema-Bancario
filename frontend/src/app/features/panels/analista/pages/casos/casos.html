@@ -1,0 +1,276 @@
+<header class="page-head">
+  <div>
+    <h1 class="page-head__title">Casos</h1>
+    <p class="page-head__sub">
+      Transacciones que no superaron el motor de reglas y esperan la decisión del analista.
+    </p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="ui-search toolbar__grow">
+    <ui-icon name="search" [size]="18" />
+    <input
+      type="search"
+      class="ui-input"
+      placeholder="Buscar por caso, referencia, cuenta o titular…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
+  </div>
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroEstado($any($event.target).value)">
+    <option value="ABIERTO">Solo abiertos</option>
+    <option value="TODOS">Todos los estados</option>
+    <option value="RESUELTO">Resueltos</option>
+    <option value="RECHAZADO">Rechazados</option>
+  </select>
+  <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()" [disabled]="cargando()">
+    <ui-icon name="refresh" [size]="16" />
+    Actualizar
+  </button>
+</div>
+
+<div class="table-card">
+  @if (cargando()) {
+    <div class="loading">
+      <span class="ui-spinner"></span>
+      Cargando casos…
+    </div>
+  } @else if (error()) {
+    <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
+      <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  } @else if (filtrados().length === 0) {
+    <ui-empty
+      icono="alertTriangle"
+      [titulo]="busqueda() ? 'Sin resultados' : filtroEstado() === 'ABIERTO' ? 'No hay casos abiertos' : 'Aún no hay casos'"
+      [mensaje]="busqueda()
+        ? 'Ningún caso coincide con la búsqueda.'
+        : filtroEstado() === 'ABIERTO'
+          ? 'Todas las transacciones están al día.'
+          : 'Los casos aparecerán aquí cuando una transacción quede pendiente.'"
+    />
+  } @else {
+    <div class="ui-table-wrap">
+      <table class="ui-table" appColumnasRedimensionables>
+        <thead>
+          <tr>
+            <th>Caso</th>
+            <th>Referencia</th>
+            <th>Tipo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Monto</th>
+            <th>Reglas</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th class="col-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (caso of paginados(); track caso.id) {
+            <tr>
+              <td>
+                <span class="ref">{{ caso.numeroCaso }}</span>
+                <span class="ref-sub">{{ estadoCasoLabel(caso.estado) }}</span>
+              </td>
+              <td>
+                <span class="cell-title">{{ caso.transaccion.referencia }}</span>
+                @if (caso.transaccion.descripcion) {
+                  <span class="cell-sub" [title]="caso.transaccion.descripcion">
+                    {{ caso.transaccion.descripcion }}
+                  </span>
+                }
+              </td>
+              <td>{{ tipoLabel(caso.transaccion.tipoTransaccion) }}</td>
+              <td>
+                <span class="cell-title">{{ caso.cuentaOrigenNumero || '—' }}</span>
+                <span class="cell-sub">{{ caso.transaccion.cuentaOrigenTitular || 'Sin titular' }}</span>
+              </td>
+              <td>
+                <span class="cell-title">{{ caso.cuentaDestinoNumero || '—' }}</span>
+                <span class="cell-sub">{{ caso.transaccion.cuentaDestinoTitular || 'Sin titular' }}</span>
+              </td>
+              <td class="money">{{ soles(caso.transaccion.monto) }}</td>
+              <td>
+                <span [class]="resumenReglasClass(caso)">
+                  @if (reglasTotal(caso) > 0) {
+                    <ui-icon
+                      [name]="reglasFallidas(caso) === 0 ? 'check' : 'xCircle'"
+                      [size]="14"
+                    />
+                  }
+                  {{ resumenReglas(caso) }}
+                </span>
+              </td>
+              <td>
+                <span [class]="badgeCasoClass(caso.estado)">
+                  <span class="ui-dot"></span> {{ estadoCasoLabel(caso.estado) }}
+                </span>
+              </td>
+              <td class="u-muted">{{ caso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="ui-icon-btn"
+                    title="Ver detalle y reglas"
+                    (click)="abrirDetalle(caso)"
+                  >
+                    <ui-icon name="info" [size]="18" />
+                  </button>
+                  @if (puedeResolver(caso)) {
+                    <button
+                      type="button"
+                      class="ui-icon-btn"
+                      title="Aprobar caso"
+                      (click)="pedirDecision(caso, 'APROBADA')"
+                    >
+                      <ui-icon name="check" [size]="18" />
+                    </button>
+                    <button
+                      type="button"
+                      class="ui-icon-btn ui-icon-btn--danger"
+                      title="Rechazar caso"
+                      (click)="pedirDecision(caso, 'RECHAZADA')"
+                    >
+                      <ui-icon name="xCircle" [size]="18" />
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ui-paginador
+      [pagina]="paginaActual()"
+      [total]="filtrados().length"
+      [porPagina]="porPagina()"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  }
+</div>
+
+<ui-modal
+  [abierto]="detalle() !== null"
+  titulo="Detalle del caso"
+  [subtitulo]="detalle()?.numeroCaso ?? ''"
+  ancho="lg"
+  (cerrar)="detalle.set(null)"
+>
+  @if (detalle(); as caso) {
+    <div class="detalle-grid">
+      <div class="detalle-item">
+        <span class="detalle-label">Referencia</span>
+        <span class="detalle-value">{{ caso.transaccion.referencia }}</span>
+      </div>
+      <div class="detalle-item">
+        <span class="detalle-label">Tipo</span>
+        <span class="detalle-value">{{ tipoLabel(caso.transaccion.tipoTransaccion) }}</span>
+      </div>
+      <div class="detalle-item">
+        <span class="detalle-label">Monto</span>
+        <span class="detalle-value">{{ soles(caso.transaccion.monto) }}</span>
+      </div>
+      <div class="detalle-item">
+        <span class="detalle-label">Estado del caso</span>
+        <span class="detalle-value">{{ estadoCasoLabel(caso.estado) }}</span>
+      </div>
+      <div class="detalle-item">
+        <span class="detalle-label">Cuenta origen</span>
+        <span class="detalle-value">{{ caso.cuentaOrigenNumero || '—' }}</span>
+        <span class="cell-sub">{{ caso.transaccion.cuentaOrigenTitular || 'Sin titular' }}</span>
+      </div>
+      <div class="detalle-item">
+        <span class="detalle-label">Cuenta destino</span>
+        <span class="detalle-value">{{ caso.cuentaDestinoNumero || '—' }}</span>
+        <span class="cell-sub">{{ caso.transaccion.cuentaDestinoTitular || 'Sin titular' }}</span>
+      </div>
+    </div>
+
+    @if (caso.transaccion.descripcion) {
+      <p class="notice">
+        <ui-icon name="info" [size]="16" />
+        {{ caso.transaccion.descripcion }}
+      </p>
+    }
+
+    <h3 class="detalle-title" style="margin-top: var(--space-5)">Evaluación de reglas</h3>
+    <app-reglas-evaluacion [reglas]="caso.transaccion.reglas || []" />
+  }
+
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="detalle.set(null)">Cerrar</button>
+    @if (detalle(); as caso) {
+      @if (puedeResolver(caso)) {
+        <button
+          type="button"
+          class="ui-btn ui-btn--danger"
+          (click)="pedirDecision(caso, 'RECHAZADA')"
+        >
+          Rechazar
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--primary"
+          (click)="pedirDecision(caso, 'APROBADA')"
+        >
+          Aprobar
+        </button>
+      }
+    }
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="decision() !== null"
+  ancho="sm"
+  [compacto]="true"
+  [titulo]="decision()?.estado === 'APROBADA' ? 'Aprobar caso' : 'Rechazar caso'"
+  [subtitulo]="decision()?.caso?.numeroCaso ?? ''"
+  (cerrar)="cerrarDecision()"
+>
+  @if (decision(); as d) {
+    <div class="decision">
+      <span class="decision__icon" [class.decision__icon--danger]="d.estado === 'RECHAZADA'">
+        <ui-icon [name]="d.estado === 'APROBADA' ? 'check' : 'xCircle'" [size]="22" />
+      </span>
+      <div>
+        <p class="decision__title">
+          {{ d.estado === 'APROBADA' ? '¿Aprobar esta transacción?' : '¿Rechazar esta transacción?' }}
+        </p>
+        <p class="decision__desc">
+          {{ d.caso.transaccion.referencia }} por
+          <strong>{{ soles(d.caso.transaccion.monto) }}</strong>
+          @if (d.estado === 'APROBADA') {
+            · se aplicará a los saldos de las cuentas.
+          } @else {
+            · no se aplicará a los saldos.
+          }
+        </p>
+      </div>
+    </div>
+  }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarDecision()">Cancelar</button>
+    <button
+      type="button"
+      class="ui-btn"
+      [class.ui-btn--primary]="decision()?.estado === 'APROBADA'"
+      [class.ui-btn--danger]="decision()?.estado === 'RECHAZADA'"
+      (click)="confirmarDecision()"
+      [disabled]="decidiendo()"
+    >
+      @if (decidiendo()) {
+        <span class="ui-spinner" style="width: 16px; height: 16px"></span>
+      }
+      {{ decision()?.estado === 'APROBADA' ? 'Aprobar' : 'Rechazar' }}
+    </button>
+  </div>
+</ui-modal>

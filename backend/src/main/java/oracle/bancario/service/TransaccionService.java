@@ -6,9 +6,12 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import oracle.bancario.model.Caso;
 import oracle.bancario.model.CuentaBancaria;
 import oracle.bancario.model.Transaccion;
+import oracle.bancario.repository.CasoRepository;
 import oracle.bancario.repository.CuentaBancariaRepository;
 import oracle.bancario.repository.TransaccionRepository;
 import oracle.bancario.request.TransaccionActualizarRequest;
@@ -34,7 +37,9 @@ import reactor.core.scheduler.Schedulers;
 /**
  * Movimientos financieros.
  *
- * - El usuario registra movimientos, que nacen PENDIENTE.
+ * - El usuario registra movimientos. Las transferencias/pagos entre cuentas de
+ *   usuarios USUARIO pasan por el motor de reglas: si cumplen, se aprueban y
+ *   aplican saldos automaticamente; si no, quedan PENDIENTES y abren un caso.
  * - Solo quien tiene RESOLVER_CASO puede modificarlos, aprobarlos o eliminarlos.
  * - Al aprobar se aplican los saldos; al rechazar o eliminar una transaccion
  *   aprobada se revierte el efecto. Todo ocurre dentro de una transaccion SQL
@@ -51,17 +56,23 @@ public class TransaccionService {
 
     private final TransaccionRepository transaccionRepository;
     private final CuentaBancariaRepository cuentaRepository;
+    private final CasoRepository casoRepository;
     private final AutorizacionCache autorizacionCache;
+    private final ReglasService reglasService;
     private final Transacciones transacciones;
 
     public TransaccionService(
             TransaccionRepository transaccionRepository,
             CuentaBancariaRepository cuentaRepository,
+            CasoRepository casoRepository,
             AutorizacionCache autorizacionCache,
+            ReglasService reglasService,
             Transacciones transacciones) {
         this.transaccionRepository = transaccionRepository;
         this.cuentaRepository = cuentaRepository;
+        this.casoRepository = casoRepository;
         this.autorizacionCache = autorizacionCache;
+        this.reglasService = reglasService;
         this.transacciones = transacciones;
     }
 
@@ -132,8 +143,8 @@ public class TransaccionService {
                             boolean privilegiado = verTodas(actor);
                             CuentaBancaria origen = cargarCuentaOperable(
                                     peticion.cuentaOrigenId(), actor, privilegiado);
-                            CuentaBancaria destino = cargarCuentaOperable(
-                                    peticion.cuentaDestinoId(), actor, privilegiado);
+                            CuentaBancaria destino = cargarDestino(
+                                    peticion, actor, privilegiado, tipo);
                             validarCombinacion(tipo, origen, destino);
                             validarActiva(origen, "origen");
                             validarActiva(destino, "destino");
@@ -146,10 +157,28 @@ public class TransaccionService {
                             transaccion.setMonto(escalar(peticion.monto()));
                             transaccion.setEstado("PENDIENTE");
                             transaccion.setDescripcion(descripcion(peticion.descripcion()));
+
+                            ReglasService.Resultado evaluacion =
+                                    reglasService.evaluar(transaccion, origen, destino);
+                            evaluacion.reglas().forEach(regla -> regla.setTransaccion(transaccion));
+                            transaccion.setReglas(new ArrayList<>(evaluacion.reglas()));
+                            if (evaluacion.aprobada()) {
+                                transaccion.setEstado("APROBADA");
+                                aplicar(transaccion, origen, destino, actor);
+                            }
+
                             Auditoria.alCrear(transaccion, actor);
                             transaccionRepository.save(transaccion);
 
-                            return ApiResponse.ok("Movimiento registrado. Queda pendiente de resolucion.",
+                            if (!"APROBADA".equals(transaccion.getEstado())) {
+                                abrirCaso(transaccion, actor);
+                                return ApiResponse.ok(
+                                        "Movimiento registrado. Queda pendiente de resolucion.",
+                                        TransaccionResponse.of(transaccion));
+                            }
+
+                            return ApiResponse.ok(
+                                    "Movimiento aprobado automaticamente: cumplio las reglas de evaluacion.",
                                     TransaccionResponse.of(transaccion));
                         })))
                 .subscribeOn(Schedulers.boundedElastic());
@@ -194,6 +223,7 @@ public class TransaccionService {
 
                             Auditoria.alActualizar(transaccion, actor);
                             transaccionRepository.save(transaccion);
+                            sincronizarCaso(transaccion, actor);
 
                             return ApiResponse.ok("Transaccion actualizada.", TransaccionResponse.of(transaccion));
                         })))
@@ -212,6 +242,7 @@ public class TransaccionService {
                             if ("APROBADA".equals(transaccion.getEstado())) {
                                 revertir(transaccion, origen, destino, actor);
                             }
+                            casoRepository.eliminarPorTransaccion(transaccion.getId());
                             transaccionRepository.delete(transaccion);
                             return null;
                         })))
@@ -264,6 +295,67 @@ public class TransaccionService {
         return cuentaRepository.bloquearPorId(cuenta.getId())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe la cuenta con id " + cuenta.getId() + "."));
+    }
+
+    private CuentaBancaria cargarDestino(
+            TransaccionCrearRequest peticion, Long actor, boolean privilegiado, String tipo) {
+        if ("TRANSFERENCIA".equals(tipo)) {
+            String numero = Filtros.normalizar(peticion.cuentaDestinoNumero());
+            if (numero != null) {
+                return cuentaRepository.findByNumeroCuenta(numero)
+                        .orElseThrow(() -> new RecursoNoEncontradoException(
+                                "No existe la cuenta destino " + numero + "."));
+            }
+        }
+        return cargarCuentaOperable(peticion.cuentaDestinoId(), actor, privilegiado);
+    }
+
+    private void abrirCaso(Transaccion transaccion, Long actor) {
+        if (casoRepository.findByTransaccionId(transaccion.getId()).isPresent()) {
+            return;
+        }
+        LocalDateTime ahora = LocalDateTime.now();
+        Caso caso = new Caso();
+        caso.setNumeroCaso(generarNumeroCaso());
+        caso.setTransaccion(transaccion);
+        caso.setCuentaOrigenNumero(transaccion.getCuentaOrigen() == null
+                ? null : transaccion.getCuentaOrigen().getNumeroCuenta());
+        caso.setCuentaDestinoNumero(transaccion.getCuentaDestino() == null
+                ? null : transaccion.getCuentaDestino().getNumeroCuenta());
+        caso.setEstado("ABIERTO");
+        caso.setActualizadoPor(actor);
+        caso.setCreadoEn(ahora);
+        caso.setActualizadoEn(ahora);
+        casoRepository.save(caso);
+    }
+
+    private void sincronizarCaso(Transaccion transaccion, Long actor) {
+        String estadoCaso = switch (transaccion.getEstado()) {
+            case "APROBADA" -> "RESUELTO";
+            case "RECHAZADA" -> "RECHAZADO";
+            default -> "ABIERTO";
+        };
+        casoRepository.findByTransaccionId(transaccion.getId()).ifPresentOrElse(caso -> {
+            caso.setEstado(estadoCaso);
+            caso.setActualizadoPor(actor);
+            caso.setActualizadoEn(LocalDateTime.now());
+            casoRepository.save(caso);
+        }, () -> {
+            if ("PENDIENTE".equals(transaccion.getEstado())) {
+                abrirCaso(transaccion, actor);
+            }
+        });
+    }
+
+    private String generarNumeroCaso() {
+        for (int intento = 0; intento < 20; intento++) {
+            String numero = "CASO-" + LocalDate.now().format(FECHA_REFERENCIA)
+                    + "-" + String.format("%06d", RANDOM.nextInt(1_000_000));
+            if (!casoRepository.existsByNumeroCaso(numero)) {
+                return numero;
+            }
+        }
+        throw new ConflictoException("No se pudo generar un numero de caso unico. Intente de nuevo.");
     }
 
     private CuentaBancaria cargarCuentaOperable(Long cuentaId, Long actor, boolean privilegiado) {

@@ -25,4 +25,12 @@ public interface UsuarioRolRepository extends JpaRepository<UsuarioRol, UsuarioR
 
     @Query("SELECT ur.usuario FROM UsuarioRol ur WHERE ur.rol.id = :rolId")
     List<Usuario> usuariosDeRol(@Param("rolId") Long rolId);
+
+    @Query("""
+            SELECT COUNT(ur) > 0 FROM UsuarioRol ur
+            WHERE ur.usuario.id = :usuarioId
+              AND ur.rol.nombre = :rol
+              AND ur.rol.activo = TRUE
+            """)
+    boolean tieneRol(@Param("usuarioId") Long usuarioId, @Param("rol") String rol);
 }

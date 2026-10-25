@@ -87,3 +87,17 @@ CREATE TABLE IF NOT EXISTS casos (
     INDEX idx_casos_estado_fecha (estado, creado_en) COMMENT 'Bandeja simple por estado (ABIERTOS, EN_REVISION, ...).',
     INDEX idx_casos_fecha (creado_en) COMMENT 'Cortes diarios / reportes de volumen por fecha.'
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Casos sobre transacciones. Snapshot de cuentas origen/destino, estado y auditoría mínima.';
+-- ============================================================
+-- 10) transaccion_reglas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS transaccion_reglas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'Identificador único de la evaluación.',
+    transaccion_id BIGINT NOT NULL COMMENT 'FK a la transacción evaluada.',
+    orden TINYINT NOT NULL COMMENT 'Orden de presentación: 1..4 reglas, 5 saldo.',
+    regla VARCHAR(10) NOT NULL COMMENT 'R1 | R2 | R3 | R4 | SALDO.',
+    titulo VARCHAR(120) NOT NULL COMMENT 'Nombre legible de la regla.',
+    aprobada BOOLEAN NOT NULL COMMENT 'TRUE = la regla pasó; FALSE = motivo de revisión.',
+    detalle VARCHAR(255) NOT NULL COMMENT 'Explicación del cálculo realizado.',
+    CONSTRAINT uq_transaccion_reglas_transaccion_regla UNIQUE (transaccion_id, regla),
+    CONSTRAINT fk_transaccion_reglas_transaccion FOREIGN KEY (transaccion_id) REFERENCES transacciones (id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Resultado de las reglas de aprobación automática por transacción.';

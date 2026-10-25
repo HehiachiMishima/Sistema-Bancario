@@ -222,7 +222,21 @@
           </div>
         }
 
-        @if (requiereDestino()) {
+        @if (destinoManual()) {
+          <div class="ui-field">
+            <label class="ui-label">Cuenta destino <span class="ui-required">*</span></label>
+            <input
+              type="text"
+              class="ui-input"
+              formControlName="cuentaDestinoNumero"
+              placeholder="001-1234567890"
+              autocomplete="off"
+            />
+            <span class="form-hint">
+              Escribe el número de cuenta del destinatario. Puede ser una cuenta de otro usuario.
+            </span>
+          </div>
+        } @else if (requiereDestino()) {
           <div class="ui-field">
             <label class="ui-label">Cuenta destino <span class="ui-required">*</span></label>
             <select class="ui-input" formControlName="cuentaDestinoId">
@@ -286,7 +300,9 @@
     @if (!editando()) {
       <p class="notice field-full">
         <ui-icon name="info" [size]="16" />
-        Los movimientos nuevos quedan <strong>PENDIENTES</strong> hasta que un analista los resuelva.
+        Las transferencias y pagos entre usuarios pasan por el motor de reglas: si las cumplen se
+        aprueban automáticamente; si no, quedan <strong>PENDIENTES</strong> y abren un caso para el
+        analista. Depósitos y retiros quedan pendientes de resolución.
       </p>
     } @else {
       <p class="notice field-full">

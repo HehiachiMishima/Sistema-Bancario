@@ -97,6 +97,7 @@ export class Movimientos {
   readonly tipoSeleccionado = signal('DEPOSITO');
   readonly requiereOrigen = computed(() => this.tipoSeleccionado() !== 'DEPOSITO');
   readonly requiereDestino = computed(() => this.tipoSeleccionado() !== 'RETIRO');
+  readonly destinoManual = computed(() => this.tipoSeleccionado() === 'TRANSFERENCIA');
 
   readonly cuentas = signal<CuentaBancaria[]>([]);
   readonly cuentasCargadas = signal(false);
@@ -112,6 +113,7 @@ export class Movimientos {
     tipoTransaccion: ['DEPOSITO', [Validators.required]],
     cuentaOrigenId: [null as number | null],
     cuentaDestinoId: [null as number | null],
+    cuentaDestinoNumero: ['', [Validators.maxLength(30)]],
     monto: [0, [Validators.required, Validators.min(0.01)]],
     estado: ['PENDIENTE', [Validators.required]],
     descripcion: ['', [Validators.maxLength(255)]],
@@ -182,6 +184,7 @@ export class Movimientos {
       tipoTransaccion: 'DEPOSITO',
       cuentaOrigenId: null,
       cuentaDestinoId: null,
+      cuentaDestinoNumero: '',
       monto: 0,
       estado: 'PENDIENTE',
       descripcion: '',
@@ -196,6 +199,7 @@ export class Movimientos {
       tipoTransaccion: movimiento.tipoTransaccion,
       cuentaOrigenId: movimiento.cuentaOrigenId,
       cuentaDestinoId: movimiento.cuentaDestinoId,
+      cuentaDestinoNumero: movimiento.cuentaDestinoNumero ?? '',
       monto: movimiento.monto,
       estado: movimiento.estado,
       descripcion: movimiento.descripcion ?? '',
@@ -214,6 +218,13 @@ export class Movimientos {
       this.formulario.controls.cuentaOrigenId.setValue(null);
     }
     if (tipo === 'RETIRO') {
+      this.formulario.controls.cuentaDestinoId.setValue(null);
+      this.formulario.controls.cuentaDestinoNumero.setValue('');
+    }
+    if (tipo !== 'TRANSFERENCIA') {
+      this.formulario.controls.cuentaDestinoNumero.setValue('');
+    }
+    if (tipo === 'TRANSFERENCIA') {
       this.formulario.controls.cuentaDestinoId.setValue(null);
     }
   }
@@ -252,18 +263,35 @@ export class Movimientos {
     }
 
     const tipo = valores.tipoTransaccion;
+    const cuentaDestinoNumero = valores.cuentaDestinoNumero.trim();
     if (this.requiereOrigen() && !valores.cuentaOrigenId) {
       this.notificaciones.error('Cuenta origen requerida', 'Selecciona la cuenta de origen.');
       return;
     }
-    if (this.requiereDestino() && !valores.cuentaDestinoId) {
+    if (tipo === 'TRANSFERENCIA' && !cuentaDestinoNumero) {
+      this.notificaciones.error(
+        'Cuenta destino requerida',
+        'Ingresa el número de cuenta del destinatario.',
+      );
+      return;
+    }
+    if (tipo !== 'TRANSFERENCIA' && this.requiereDestino() && !valores.cuentaDestinoId) {
       this.notificaciones.error('Cuenta destino requerida', 'Selecciona la cuenta de destino.');
       return;
     }
+    const cuentaOrigen = this.cuentas().find((cuenta) => cuenta.id === valores.cuentaOrigenId);
     if (
-      (tipo === 'TRANSFERENCIA' || tipo === 'PAGO') &&
-      valores.cuentaOrigenId === valores.cuentaDestinoId
+      tipo === 'TRANSFERENCIA' &&
+      cuentaOrigen &&
+      cuentaOrigen.numeroCuenta === cuentaDestinoNumero
     ) {
+      this.notificaciones.error(
+        'Cuentas repetidas',
+        'La cuenta origen y la cuenta destino deben ser distintas.',
+      );
+      return;
+    }
+    if (tipo === 'PAGO' && valores.cuentaOrigenId === valores.cuentaDestinoId) {
       this.notificaciones.error(
         'Cuentas repetidas',
         'La cuenta origen y la cuenta destino deben ser distintas.',
@@ -276,17 +304,26 @@ export class Movimientos {
       .crear({
         tipoTransaccion: tipo,
         cuentaOrigenId: tipo === 'DEPOSITO' ? null : valores.cuentaOrigenId,
-        cuentaDestinoId: tipo === 'RETIRO' ? null : valores.cuentaDestinoId,
+        cuentaDestinoId:
+          tipo === 'RETIRO' || tipo === 'TRANSFERENCIA' ? null : valores.cuentaDestinoId,
+        cuentaDestinoNumero: tipo === 'TRANSFERENCIA' ? cuentaDestinoNumero : null,
         monto: Number(valores.monto),
         descripcion: valores.descripcion.trim() || null,
       })
       .pipe(finalize(() => this.guardando.set(false)))
       .subscribe({
         next: (movimiento) => {
-          this.notificaciones.exito(
-            'Movimiento registrado',
-            `${movimiento.referencia} · pendiente de resolución.`,
-          );
+          if (movimiento.estado === 'APROBADA') {
+            this.notificaciones.exito(
+              'Movimiento aprobado',
+              `${movimiento.referencia} · aprobado automáticamente por las reglas.`,
+            );
+          } else {
+            this.notificaciones.exito(
+              'Movimiento registrado',
+              `${movimiento.referencia} · pendiente de resolución.`,
+            );
+          }
           this.cerrarForm();
           this.cargar();
         },

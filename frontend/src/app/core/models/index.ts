@@ -5,3 +5,5 @@ export * from './rol.model';
 export * from './permiso.model';
 export * from './cuenta.model';
 export * from './transaccion.model';
+export * from './caso.model';
+export * from './analista.model';
