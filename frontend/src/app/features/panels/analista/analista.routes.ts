@@ -4,7 +4,7 @@ import { PANEL_ANALISTA, primerModuloAccesible } from '../../../core/config/pane
 import { PERMISOS } from '../../../core/config/permisos';
 import { permisoGuard } from '../../../core/guards/permiso.guard';
 import { SesionStore } from '../../../core/services/sesion';
-import { PanelShell } from '../compartido/panel-shell';
+import { PanelShell } from '../panel-shell';
 
 function primerModuloAnalista(): string {
   try {

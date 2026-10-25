@@ -1,8 +1,8 @@
 @use 'breakpoints' as bp;
 
 /**
- * Misma coreografía del shell de Administración: velos → panel → items en
- * cascada. Se usa en Cuentas, Transacciones y Analista.
+ * Shell unico de todos los paneles: velos → panel → items en cascada.
+ * Administracion, Cuentas, Transacciones y Analista comparten esta hoja.
  */
 $salida: cubic-bezier(0.16, 1, 0.3, 1);
 $entrada: cubic-bezier(0.7, 0, 0.84, 0);
