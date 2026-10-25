@@ -258,6 +258,25 @@
       }
     </div>
 
+    @if (!editando() && requiereConfirmacion()) {
+      <div class="ui-field">
+        <label class="ui-label">Contraseña de confirmación <span class="ui-required">*</span></label>
+        <input
+          type="password"
+          class="ui-input"
+          [class.ui-input--invalid]="campoInvalido('contrasena')"
+          formControlName="contrasena"
+          autocomplete="current-password"
+          placeholder="Tu contraseña de acceso"
+        />
+        @if (campoInvalido('contrasena')) {
+          <span class="ui-error">Ingresa tu contraseña para confirmar la operación.</span>
+        } @else {
+          <span class="form-hint">Depósitos y retiros se autorizan con tu contraseña.</span>
+        }
+      </div>
+    }
+
     @if (editando()) {
       <div class="ui-field">
         <label class="ui-label">Estado <span class="ui-required">*</span></label>
@@ -284,8 +303,12 @@
 
     @if (!editando()) {
       <p class="notice field-full">
-        <ui-icon name="key" [size]="16" />
-        <strong>Sistema completamente seguro y verificado.</strong>
+        <ui-icon name="shield" [size]="16" />
+        @if (requiereConfirmacion()) {
+          <span>Depósitos y retiros seguros y verificados.</span>
+        } @else {
+          <span>Transferencias y pagos seguros y verificados.</span>
+        }
       </p>
     } @else {
       <p class="notice field-full">

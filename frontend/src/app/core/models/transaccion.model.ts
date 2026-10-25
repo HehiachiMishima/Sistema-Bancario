@@ -36,6 +36,7 @@ export interface TransaccionCrearRequest {
   cuentaDestinoNumero?: string | null;
   tipoTransaccion: TipoTransaccion | string;
   monto: number;
+  contrasena?: string | null;
   descripcion?: string | null;
 }
 

@@ -146,6 +146,14 @@ export const PANEL_ANALISTA: PanelDef = {
       permiso: PERMISOS.VER_TRANSACCIONES,
     },
     {
+      id: 'cuentas',
+      nombre: 'Cuentas',
+      descripcion: 'Consulta, edición y eliminación de las cuentas de todos los usuarios.',
+      icono: 'wallet',
+      ruta: 'cuentas',
+      permiso: PERMISOS.VER_CUENTAS,
+    },
+    {
       id: 'casos',
       nombre: 'Casos',
       descripcion: 'Transacciones pendientes de revisión y resolución.',

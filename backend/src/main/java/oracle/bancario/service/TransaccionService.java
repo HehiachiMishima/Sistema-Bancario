@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.admin.model.Usuario;
+import oracle.admin.repository.UsuarioRepository;
 import oracle.bancario.model.Caso;
 import oracle.bancario.model.CuentaBancaria;
 import oracle.bancario.model.Transaccion;
@@ -21,6 +23,7 @@ import oracle.bancario.response.TransaccionDashboardResponse;
 import oracle.bancario.response.TransaccionResponse;
 import oracle.common.config.Transacciones;
 import oracle.common.exception.ConflictoException;
+import oracle.common.exception.NoAutorizadoException;
 import oracle.common.exception.RecursoNoEncontradoException;
 import oracle.common.response.ApiResponse;
 import oracle.common.security.AutorizacionCache;
@@ -29,7 +32,9 @@ import oracle.common.support.Auditoria;
 import oracle.common.support.Filtros;
 import oracle.common.support.Listas;
 import oracle.common.support.Trazas;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -40,6 +45,8 @@ import reactor.core.scheduler.Schedulers;
  * - El usuario registra movimientos. Las transferencias/pagos entre cuentas de
  *   usuarios USUARIO pasan por el motor de reglas: si cumplen, se aprueban y
  *   aplican saldos automaticamente; si no, quedan PENDIENTES y abren un caso.
+ * - Los depositos y retiros estan exentos del motor de reglas: se autorizan
+ *   confirmando la contrasena del usuario y se aprueban al instante.
  * - Solo quien tiene RESOLVER_CASO puede modificarlos, aprobarlos o eliminarlos.
  * - Al aprobar se aplican los saldos; al rechazar o eliminar una transaccion
  *   aprobada se revierte el efecto. Todo ocurre dentro de una transaccion SQL
@@ -57,22 +64,28 @@ public class TransaccionService {
     private final TransaccionRepository transaccionRepository;
     private final CuentaBancariaRepository cuentaRepository;
     private final CasoRepository casoRepository;
+    private final UsuarioRepository usuarioRepository;
     private final AutorizacionCache autorizacionCache;
     private final ReglasService reglasService;
+    private final PasswordEncoder passwordEncoder;
     private final Transacciones transacciones;
 
     public TransaccionService(
             TransaccionRepository transaccionRepository,
             CuentaBancariaRepository cuentaRepository,
             CasoRepository casoRepository,
+            UsuarioRepository usuarioRepository,
             AutorizacionCache autorizacionCache,
             ReglasService reglasService,
+            PasswordEncoder passwordEncoder,
             Transacciones transacciones) {
         this.transaccionRepository = transaccionRepository;
         this.cuentaRepository = cuentaRepository;
         this.casoRepository = casoRepository;
+        this.usuarioRepository = usuarioRepository;
         this.autorizacionCache = autorizacionCache;
         this.reglasService = reglasService;
+        this.passwordEncoder = passwordEncoder;
         this.transacciones = transacciones;
     }
 
@@ -140,6 +153,10 @@ public class TransaccionService {
         return Mono.fromCallable(() -> Trazas.medir(log, "TransaccionService.crear", () ->
                         transacciones.ejecutar(() -> {
                             String tipo = peticion.tipoTransaccion().trim().toUpperCase();
+                            boolean exentaReglas = "DEPOSITO".equals(tipo) || "RETIRO".equals(tipo);
+                            if (exentaReglas) {
+                                confirmarContrasena(peticion.contrasena(), actor);
+                            }
                             boolean privilegiado = verTodas(actor);
                             CuentaBancaria origen = cargarCuentaOperable(
                                     peticion.cuentaOrigenId(), actor, privilegiado);
@@ -158,13 +175,18 @@ public class TransaccionService {
                             transaccion.setEstado("PENDIENTE");
                             transaccion.setDescripcion(descripcion(peticion.descripcion()));
 
-                            ReglasService.Resultado evaluacion =
-                                    reglasService.evaluar(transaccion, origen, destino);
-                            evaluacion.reglas().forEach(regla -> regla.setTransaccion(transaccion));
-                            transaccion.setReglas(new ArrayList<>(evaluacion.reglas()));
-                            if (evaluacion.aprobada()) {
+                            if (exentaReglas) {
                                 transaccion.setEstado("APROBADA");
                                 aplicar(transaccion, origen, destino, actor);
+                            } else {
+                                ReglasService.Resultado evaluacion =
+                                        reglasService.evaluar(transaccion, origen, destino);
+                                evaluacion.reglas().forEach(regla -> regla.setTransaccion(transaccion));
+                                transaccion.setReglas(new ArrayList<>(evaluacion.reglas()));
+                                if (evaluacion.aprobada()) {
+                                    transaccion.setEstado("APROBADA");
+                                    aplicar(transaccion, origen, destino, actor);
+                                }
                             }
 
                             Auditoria.alCrear(transaccion, actor);
@@ -177,6 +199,11 @@ public class TransaccionService {
                                         TransaccionResponse.of(transaccion));
                             }
 
+                            if (exentaReglas) {
+                                return ApiResponse.ok(
+                                        "Movimiento aprobado: exento del motor de reglas y confirmado con contrasena.",
+                                        TransaccionResponse.of(transaccion));
+                            }
                             return ApiResponse.ok(
                                     "Movimiento aprobado automaticamente: cumplio las reglas de evaluacion.",
                                     TransaccionResponse.of(transaccion));
@@ -295,6 +322,18 @@ public class TransaccionService {
         return cuentaRepository.bloquearPorId(cuenta.getId())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe la cuenta con id " + cuenta.getId() + "."));
+    }
+
+    private void confirmarContrasena(String contrasena, Long actor) {
+        if (!StringUtils.hasText(contrasena)) {
+            throw new ConflictoException(
+                    "La contrasena es obligatoria para registrar depositos y retiros.");
+        }
+        Usuario usuario = usuarioRepository.findById(actor)
+                .orElseThrow(() -> new NoAutorizadoException("La sesion ya no es valida."));
+        if (!passwordEncoder.matches(contrasena, usuario.getContrasena())) {
+            throw new ConflictoException("La contrasena no es correcta.");
+        }
     }
 
     private CuentaBancaria cargarDestino(

@@ -13,6 +13,7 @@ import oracle.admin.model.Usuario;
 import oracle.admin.repository.UsuarioRepository;
 import oracle.bancario.model.CuentaBancaria;
 import oracle.bancario.repository.CuentaBancariaRepository;
+import oracle.bancario.repository.TransaccionRepository;
 import oracle.bancario.request.CuentaActualizarRequest;
 import oracle.bancario.request.CuentaCrearRequest;
 import oracle.bancario.response.CuentaDashboardResponse;
@@ -34,8 +35,9 @@ import reactor.core.scheduler.Schedulers;
 /**
  * CRUD de cuentas bancarias con alcance por titular:
  * un usuario normal solo ve y opera sus propias cuentas; el administrador
- * (permiso PANEL_ADMIN) ve todas. Activar/desactivar queda fuera del CRUD y
- * se expone en un endpoint aparte con su propio permiso.
+ * (PANEL_ADMIN) y el analista (RESOLVER_CASO) ven todas. Activar/desactivar
+ * queda fuera del CRUD y se expone en un endpoint aparte con su propio permiso.
+ * No se eliminan cuentas con movimientos: el historial contable es inmutable.
  */
 @Slf4j
 @Service
@@ -45,16 +47,19 @@ public class CuentaService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final CuentaBancariaRepository cuentaRepository;
+    private final TransaccionRepository transaccionRepository;
     private final UsuarioRepository usuarioRepository;
     private final AutorizacionCache autorizacionCache;
     private final Transacciones transacciones;
 
     public CuentaService(
             CuentaBancariaRepository cuentaRepository,
+            TransaccionRepository transaccionRepository,
             UsuarioRepository usuarioRepository,
             AutorizacionCache autorizacionCache,
             Transacciones transacciones) {
         this.cuentaRepository = cuentaRepository;
+        this.transaccionRepository = transaccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.autorizacionCache = autorizacionCache;
         this.transacciones = transacciones;
@@ -144,6 +149,12 @@ public class CuentaService {
         return Mono.<Void>fromRunnable(() -> Trazas.medir(log, "CuentaService.eliminar id=" + id, () ->
                         transacciones.ejecutar(() -> {
                             CuentaBancaria cuenta = obtenerCuenta(id, actor);
+                            if (transaccionRepository.existsByCuentaOrigenIdOrCuentaDestinoId(id, id)) {
+                                throw new ConflictoException(
+                                        "La cuenta " + cuenta.getNumeroCuenta()
+                                                + " tiene movimientos registrados y no se puede eliminar. "
+                                                + "Desactivala para conservar el historial.");
+                            }
                             cuentaRepository.delete(cuenta);
                             return null;
                         })))
@@ -209,7 +220,7 @@ public class CuentaService {
     }
 
     private List<CuentaBancaria> listarCuentas(Long actor) {
-        List<CuentaBancaria> cuentas = esAdministrador(actor)
+        List<CuentaBancaria> cuentas = veTodasLasCuentas(actor)
                 ? cuentaRepository.findAllByOrderByCreadoEnDesc(Listas.limitado())
                 : cuentaRepository.findByUsuarioIdOrderByCreadoEnDesc(actor, Listas.limitado());
         Listas.avisarSiCorto(log, cuentas.size(), "CuentaService.listarCuentas");
@@ -217,7 +228,7 @@ public class CuentaService {
     }
 
     private CuentaBancaria obtenerCuenta(Long id, Long actor) {
-        if (esAdministrador(actor)) {
+        if (veTodasLasCuentas(actor)) {
             return cuentaRepository.findById(id)
                     .orElseThrow(() -> new RecursoNoEncontradoException("No existe la cuenta con id " + id + "."));
         }
@@ -225,9 +236,10 @@ public class CuentaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe la cuenta con id " + id + "."));
     }
 
-    private boolean esAdministrador(Long actor) {
+    private boolean veTodasLasCuentas(Long actor) {
         return autorizacionCache.cargar(actor).autoridades().stream()
-                .anyMatch(autoridad -> "PANEL_ADMIN".equals(autoridad.getAuthority()));
+                .anyMatch(autoridad -> "PANEL_ADMIN".equals(autoridad.getAuthority())
+                        || "RESOLVER_CASO".equals(autoridad.getAuthority()));
     }
 
     private String normalizarNumero(String numero) {

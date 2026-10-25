@@ -12,7 +12,7 @@ import java.math.BigDecimal;
  * Registro de un movimiento. Cuando la operacion tiene cuenta destino, esta
  * puede ser de otro usuario y se identifica por numero. El estado inicial
  * depende del motor de reglas: APROBADA automaticamente o PENDIENTE para el
- * analista.
+ * analista. Los depositos y retiros se aprueban con la contrasena del usuario.
  */
 public record TransaccionCrearRequest(
         Long cuentaOrigenId,
@@ -31,6 +31,9 @@ public record TransaccionCrearRequest(
         @DecimalMin(value = "0.01", message = "El monto debe ser mayor que cero.")
         @Digits(integer = 16, fraction = 2, message = "El monto admite hasta 2 decimales.")
         BigDecimal monto,
+
+        @Size(max = 100, message = "La contrasena no puede exceder 100 caracteres.")
+        String contrasena,
 
         @Size(max = 255, message = "La descripcion no puede exceder 255 caracteres.")
         String descripcion) {

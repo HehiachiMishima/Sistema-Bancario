@@ -34,6 +34,12 @@ export const ANALISTA_ROUTES: Routes = [
           import('./pages/transacciones/transacciones').then((m) => m.AnalistaTransacciones),
       },
       {
+        path: 'cuentas',
+        canActivate: [permisoGuard(PERMISOS.VER_CUENTAS)],
+        loadComponent: () =>
+          import('../cuentas/pages/cuentas/cuentas').then((m) => m.Cuentas),
+      },
+      {
         path: 'casos',
         canActivate: [permisoGuard(PERMISOS.RESOLVER_CASO)],
         loadComponent: () => import('./pages/casos/casos').then((m) => m.AnalistaCasos),

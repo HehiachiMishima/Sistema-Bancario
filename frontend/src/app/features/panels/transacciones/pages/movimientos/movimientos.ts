@@ -97,6 +97,9 @@ export class Movimientos {
   readonly tipoSeleccionado = signal('DEPOSITO');
   readonly requiereOrigen = computed(() => this.tipoSeleccionado() !== 'DEPOSITO');
   readonly destinoManual = computed(() => this.tipoSeleccionado() !== 'RETIRO');
+  readonly requiereConfirmacion = computed(
+    () => this.tipoSeleccionado() === 'DEPOSITO' || this.tipoSeleccionado() === 'RETIRO',
+  );
 
   readonly cuentas = signal<CuentaBancaria[]>([]);
   readonly cuentasCargadas = signal(false);
@@ -113,6 +116,7 @@ export class Movimientos {
     cuentaOrigenId: [null as number | null],
     cuentaDestinoNumero: ['', [Validators.maxLength(30)]],
     monto: [0, [Validators.required, Validators.min(0.01)]],
+    contrasena: ['', [Validators.maxLength(100)]],
     estado: ['PENDIENTE', [Validators.required]],
     descripcion: ['', [Validators.maxLength(255)]],
   });
@@ -160,7 +164,7 @@ export class Movimientos {
     this.pagina.set(1);
   }
 
-  campoInvalido(campo: 'monto' | 'descripcion'): boolean {
+  campoInvalido(campo: 'monto' | 'contrasena' | 'descripcion'): boolean {
     const control = this.formulario.controls[campo];
     return control.touched && control.invalid;
   }
@@ -183,27 +187,33 @@ export class Movimientos {
       cuentaOrigenId: null,
       cuentaDestinoNumero: '',
       monto: 0,
+      contrasena: '',
       estado: 'PENDIENTE',
       descripcion: '',
     });
+    this.actualizarValidadoresContrasena(true);
     this.cargarCuentas();
     this.formAbierto.set(true);
   }
 
   abrirEditar(movimiento: Transaccion): void {
     this.editando.set(movimiento);
+    this.tipoSeleccionado.set(movimiento.tipoTransaccion);
     this.formulario.reset({
       tipoTransaccion: movimiento.tipoTransaccion,
       cuentaOrigenId: movimiento.cuentaOrigenId,
       cuentaDestinoNumero: movimiento.cuentaDestinoNumero ?? '',
       monto: movimiento.monto,
+      contrasena: '',
       estado: movimiento.estado,
       descripcion: movimiento.descripcion ?? '',
     });
+    this.actualizarValidadoresContrasena(false);
     this.formAbierto.set(true);
   }
 
   cerrarForm(): void {
+    this.formulario.controls.contrasena.setValue('');
     this.formAbierto.set(false);
     this.editando.set(null);
   }
@@ -216,6 +226,15 @@ export class Movimientos {
     if (tipo === 'RETIRO') {
       this.formulario.controls.cuentaDestinoNumero.setValue('');
     }
+    this.actualizarValidadoresContrasena(tipo === 'DEPOSITO' || tipo === 'RETIRO');
+  }
+
+  private actualizarValidadoresContrasena(exigir: boolean): void {
+    const control = this.formulario.controls.contrasena;
+    control.setValidators(
+      exigir ? [Validators.required, Validators.maxLength(100)] : [Validators.maxLength(100)],
+    );
+    control.updateValueAndValidity();
   }
 
   guardar(): void {
@@ -264,6 +283,13 @@ export class Movimientos {
       );
       return;
     }
+    if (this.requiereConfirmacion() && !valores.contrasena.trim()) {
+      this.notificaciones.error(
+        'Contraseña requerida',
+        'Confirma la operación con tu contraseña de acceso.',
+      );
+      return;
+    }
     const cuentaOrigen = this.cuentas().find((cuenta) => cuenta.id === valores.cuentaOrigenId);
     if (
       (tipo === 'TRANSFERENCIA' || tipo === 'PAGO') &&
@@ -285,6 +311,7 @@ export class Movimientos {
         cuentaDestinoId: null,
         cuentaDestinoNumero: tipo === 'RETIRO' ? null : cuentaDestinoNumero,
         monto: Number(valores.monto),
+        contrasena: this.requiereConfirmacion() ? valores.contrasena : null,
         descripcion: valores.descripcion.trim() || null,
       })
       .pipe(finalize(() => this.guardando.set(false)))
@@ -293,7 +320,9 @@ export class Movimientos {
           if (movimiento.estado === 'APROBADA') {
             this.notificaciones.exito(
               'Movimiento aprobado',
-              `${movimiento.referencia} · aprobado automáticamente por las reglas.`,
+              this.requiereConfirmacion()
+                ? `${movimiento.referencia} · confirmado con contraseña y aplicado a los saldos.`
+                : `${movimiento.referencia} · aprobado automáticamente por las reglas.`,
             );
           } else {
             this.notificaciones.exito(

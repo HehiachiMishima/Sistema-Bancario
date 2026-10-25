@@ -1,7 +1,9 @@
 <header class="page-head">
   <div>
     <h1 class="page-head__title">Cuentas</h1>
-    <p class="page-head__sub">Abre, edita y consulta tus cuentas bancarias.</p>
+    <p class="page-head__sub">{{ esSupervision()
+      ? 'Consulta, edita y elimina las cuentas de todos los usuarios.'
+      : 'Abre, edita y consulta tus cuentas bancarias.' }}</p>
   </div>
   <button *hasPermiso="permisos.CREAR_CUENTAS" type="button" class="ui-btn ui-btn--primary" (click)="abrirCrear()">
     <ui-icon name="plus" [size]="18" />
@@ -55,7 +57,9 @@
       [titulo]="busqueda() || filtroTipo() !== 'TODOS' || filtroEstado() !== 'TODOS' ? 'Sin resultados' : 'Aún no hay cuentas'"
       [mensaje]="busqueda() || filtroTipo() !== 'TODOS' || filtroEstado() !== 'TODOS'
         ? 'Ninguna cuenta coincide con los filtros.'
-        : 'Abre tu primera cuenta para empezar.'"
+        : esSupervision()
+          ? 'Las cuentas de los usuarios aparecerán aquí.'
+          : 'Abre tu primera cuenta para empezar.'"
     >
       @if (!busqueda() && filtroTipo() === 'TODOS' && filtroEstado() === 'TODOS') {
         <button *hasPermiso="permisos.CREAR_CUENTAS" type="button" class="ui-btn ui-btn--primary ui-btn--sm" (click)="abrirCrear()">
@@ -145,7 +149,9 @@
 <ui-modal
   [abierto]="formAbierto()"
   [titulo]="editando() ? 'Editar cuenta' : 'Nueva cuenta'"
-  [subtitulo]="editando() ? 'Actualiza los datos de tu cuenta.' : 'Abre una cuenta bancaria nueva.'"
+  [subtitulo]="editando()
+    ? (esSupervision() ? 'Actualiza los datos de la cuenta del titular.' : 'Actualiza los datos de tu cuenta.')
+    : 'Abre una cuenta bancaria nueva.'"
   (cerrar)="cerrarForm()"
 >
   <form class="grid-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
@@ -228,7 +234,9 @@
       <span class="confirm__icon"><ui-icon name="trash" [size]="22" /></span>
       <div class="confirm__text">
         <p class="confirm__title">¿Eliminar la cuenta {{ cuenta.numeroCuenta }}?</p>
-        <p class="confirm__desc">Esta acción no se puede deshacer.</p>
+        <p class="confirm__desc">
+          Solo se pueden eliminar cuentas sin movimientos registrados. Esta acción no se puede deshacer.
+        </p>
       </div>
     </div>
   }

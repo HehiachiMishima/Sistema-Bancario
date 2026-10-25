@@ -39,6 +39,9 @@ export class Cuentas {
 
   readonly permisos = PERMISOS;
   readonly permisosSesion = this.auth.permisos;
+  readonly esSupervision = computed(() =>
+    this.permisosSesion().includes(PERMISOS.RESOLVER_CASO),
+  );
 
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);

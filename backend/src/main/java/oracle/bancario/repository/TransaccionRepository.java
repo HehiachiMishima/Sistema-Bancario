@@ -70,6 +70,8 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
             @Param("estado") String estado,
             @Param("tipo") String tipo);
 
+    boolean existsByCuentaOrigenIdOrCuentaDestinoId(Long cuentaOrigenId, Long cuentaDestinoId);
+
     long countByCuentaOrigenId(Long cuentaOrigenId);
 
     long countByCuentaOrigenIdAndCuentaDestinoId(Long cuentaOrigenId, Long cuentaDestinoId);

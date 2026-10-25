@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.freebuff/
 
 # --- Certificados (CA TLS de Aiven) ---
 certs/
