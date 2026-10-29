@@ -7,53 +7,44 @@ import { Icon } from '../icon/icon';
   imports: [Icon],
   template: `
     @if (total() > 0) {
-      <div class="d-flex justify-content-end align-items-center px-3 py-2 border-top bg-body-tertiary">
+      <div class="ui-paginador">
         @if (totalPaginas() > 1) {
-          <nav aria-label="Paginación">
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" [class.disabled]="pagina() <= 1">
+          <nav class="ui-paginador__nav" aria-label="Paginación">
+            <button
+              type="button"
+              class="ui-paginador__btn"
+              [disabled]="pagina() <= 1"
+              (click)="ir(pagina() - 1)"
+              aria-label="Página anterior"
+            >
+              <ui-icon name="chevronLeft" [size]="16" />
+            </button>
+
+            @for (p of paginas(); track $index) {
+              @if (p === 'gap') {
+                <span class="ui-paginador__gap" aria-hidden="true">…</span>
+              } @else {
                 <button
                   type="button"
-                  class="page-link"
-                  [disabled]="pagina() <= 1"
-                  (click)="ir(pagina() - 1)"
-                  aria-label="Página anterior"
+                  class="ui-paginador__btn"
+                  [class.ui-paginador__btn--activa]="p === pagina()"
+                  [attr.aria-current]="p === pagina() ? 'page' : null"
+                  (click)="ir(p)"
                 >
-                  <ui-icon name="chevronLeft" [size]="16" />
+                  {{ p }}
                 </button>
-              </li>
-
-              @for (p of paginas(); track $index) {
-                @if (p === 'gap') {
-                  <li class="page-item disabled">
-                    <span class="page-link" aria-hidden="true">…</span>
-                  </li>
-                } @else {
-                  <li class="page-item" [class.active]="p === pagina()">
-                    <button
-                      type="button"
-                      class="page-link"
-                      [attr.aria-current]="p === pagina() ? 'page' : null"
-                      (click)="ir(p)"
-                    >
-                      {{ p }}
-                    </button>
-                  </li>
-                }
               }
+            }
 
-              <li class="page-item" [class.disabled]="pagina() >= totalPaginas()">
-                <button
-                  type="button"
-                  class="page-link"
-                  [disabled]="pagina() >= totalPaginas()"
-                  (click)="ir(pagina() + 1)"
-                  aria-label="Página siguiente"
-                >
-                  <ui-icon name="chevronRight" [size]="16" />
-                </button>
-              </li>
-            </ul>
+            <button
+              type="button"
+              class="ui-paginador__btn"
+              [disabled]="pagina() >= totalPaginas()"
+              (click)="ir(pagina() + 1)"
+              aria-label="Página siguiente"
+            >
+              <ui-icon name="chevronRight" [size]="16" />
+            </button>
           </nav>
         }
       </div>

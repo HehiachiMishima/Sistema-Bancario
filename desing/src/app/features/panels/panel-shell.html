@@ -1,25 +1,22 @@
 <div class="app-shell d-flex min-vh-100" [class.app-shell--open]="menuAbierto()">
   <aside id="shell-nav" class="app-sidebar border-end d-flex flex-column" [attr.inert]="menuAbierto() ? null : ''">
-    <div class="d-flex align-items-center gap-3 border-bottom px-3 flex-shrink-0" style="min-height: 56px">
-      <span
-        class="d-inline-flex align-items-center justify-content-center bg-white border rounded-3 p-1 flex-shrink-0"
-        style="width: 34px; height: 34px"
-      >
-        <img src="logo.png" alt="Sistema Bancario" width="44" height="44" class="img-fluid object-fit-contain" />
+    <div class="app-brand border-bottom flex-shrink-0">
+      <span class="app-brand__mark">
+        <img src="logo.png" alt="Sistema Bancario" width="44" height="44" />
       </span>
-      <span class="d-flex flex-column lh-1" style="min-width: 0">
-        <span class="fw-semibold text-truncate">{{ panel().nombre }}</span>
-        <span class="small text-body-secondary text-truncate">{{ usuario()?.nombre }} {{ usuario()?.apellido }}</span>
+      <span class="app-brand__text">
+        <span class="app-brand__title text-truncate">{{ panel().nombre }}</span>
+        <span class="app-brand__sub text-truncate">{{ usuario()?.nombre }} {{ usuario()?.apellido }}</span>
       </span>
     </div>
 
-    <nav class="nav flex-column gap-1 p-3 flex-grow-1 overflow-auto">
-      <p class="text-uppercase small fw-semibold text-body-secondary px-2 mb-2" style="letter-spacing: 0.08em">Módulos</p>
-      @for (modulo of modulos(); track modulo.id; let i = $index) {
+    <nav class="app-nav flex-column flex-grow-1">
+      <p class="app-nav__label">Módulos</p>
+      @for (modulo of modulos(); track modulo.id) {
         <a
-          class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2"
+          class="app-nav__item nav-link"
           [routerLink]="modulo.ruta"
-          routerLinkActive="active"
+          routerLinkActive="app-nav__item--active"
           (click)="cerrarMenu()"
         >
           <ui-icon [name]="modulo.icono" [size]="18" />
@@ -28,12 +25,8 @@
       }
     </nav>
 
-    <div class="p-3 border-top flex-shrink-0">
-      <button
-        type="button"
-        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2"
-        (click)="irAPaneles()"
-      >
+    <div class="app-sidebar__foot border-top flex-shrink-0">
+      <button type="button" class="app-panel-btn" (click)="irAPaneles()">
         <ui-icon name="panel" [size]="18" />
         Cambiar de panel
       </button>
@@ -45,10 +38,10 @@
   }
 
   <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
-    <header class="app-topbar navbar border-bottom gap-2 px-3 px-md-4">
+    <header class="app-topbar navbar border-bottom">
       <button
         type="button"
-        class="btn btn-link text-body-secondary p-2 flex-shrink-0"
+        class="btn btn-link app-icon-btn flex-shrink-0"
         (click)="alternarMenu()"
         aria-label="Menú"
         [attr.aria-expanded]="menuAbierto()"
@@ -61,39 +54,39 @@
       </button>
 
       <nav aria-label="breadcrumb" class="d-none d-sm-block">
-        <ol class="breadcrumb mb-0 small">
-          <li class="breadcrumb-item text-body-secondary">Panel</li>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">Panel</li>
           <li class="breadcrumb-item active" aria-current="page">{{ panel().nombre }}</li>
         </ol>
       </nav>
 
       <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
-        <button type="button" class="btn btn-link text-body-secondary p-2" (click)="alternarTema($event)" aria-label="Cambiar tema">
+        <button
+          type="button"
+          class="btn btn-link app-icon-btn"
+          (click)="alternarTema($event)"
+          aria-label="Cambiar tema"
+        >
           <ui-icon [name]="tema.tema() === 'dark' ? 'sun' : 'moon'" [size]="18" />
         </button>
 
         @if (usuario(); as u) {
-          <div class="d-none d-md-flex align-items-center gap-2 border-start ps-3">
-            <span
-              class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center fw-semibold flex-shrink-0"
-              style="width: 38px; height: 38px"
-            >
-              {{ iniciales() }}
-            </span>
-            <span class="d-flex flex-column lh-1" style="min-width: 0; max-width: 180px">
-              <span class="small fw-semibold text-truncate">{{ u.nombre }} {{ u.apellido }}</span>
-              <span class="text-body-secondary text-truncate" style="font-size: 0.72rem">{{ u.email }}</span>
+          <div class="app-user border-start">
+            <span class="ui-avatar">{{ iniciales() }}</span>
+            <span class="app-user__info">
+              <span class="app-user__name">{{ u.nombre }} {{ u.apellido }}</span>
+              <span class="app-user__mail">{{ u.email }}</span>
             </span>
           </div>
         }
 
-        <button type="button" class="btn btn-link text-body-secondary p-2" (click)="cerrarSesion()" aria-label="Cerrar sesión">
+        <button type="button" class="btn btn-link app-icon-btn" (click)="cerrarSesion()" aria-label="Cerrar sesión">
           <ui-icon name="logout" [size]="18" />
         </button>
       </div>
     </header>
 
-    <main class="flex-grow-1 p-3 p-md-4" style="min-width: 0">
+    <main class="app-content flex-grow-1" style="min-width: 0">
       <router-outlet />
     </main>
   </div>

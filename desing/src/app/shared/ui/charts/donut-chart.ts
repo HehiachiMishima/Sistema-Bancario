@@ -19,17 +19,13 @@ interface ArcoDonut {
   selector: 'ui-donut',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="d-flex flex-column align-items-center gap-4 w-100">
-      <div
-        class="position-relative w-100 donut-ring"
-        [style.max-width.px]="tamano()"
-        style="aspect-ratio: 1"
-      >
-        <svg viewBox="0 0 42 42" role="img" class="w-100 h-100" style="transform: rotate(-90deg)" [attr.aria-label]="titulo()">
-          <circle class="donut-track" cx="21" cy="21" r="15.9155" />
+    <div class="donut">
+      <div class="donut__ring" [style.max-width.px]="tamano()">
+        <svg viewBox="0 0 42 42" role="img" [attr.aria-label]="titulo()">
+          <circle class="donut__track" cx="21" cy="21" r="15.9155" />
           @for (arco of arcos(); track arco.etiqueta) {
             <circle
-              class="donut-arc"
+              class="donut__arc"
               cx="21"
               cy="21"
               r="15.9155"
@@ -39,61 +35,120 @@ interface ArcoDonut {
             />
           }
         </svg>
-        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-center">
-          <span class="fw-semibold" style="font-size: clamp(1.7rem, 2.6vw, 2.2rem); line-height: 1">
-            {{ total() }}
-          </span>
-          <span class="text-uppercase text-body-secondary fw-semibold small" style="letter-spacing: 0.08em">
-            {{ centro() }}
-          </span>
+        <div class="donut__center">
+          <span class="donut__total">{{ total() }}</span>
+          <span class="donut__total-label">{{ centro() }}</span>
         </div>
       </div>
 
-      <ul class="list-unstyled d-flex flex-column gap-2 w-100 mb-0">
+      <ul class="donut__legend">
         @for (arco of arcos(); track arco.etiqueta) {
-          <li class="d-flex align-items-center gap-3 small">
-            <span class="rounded-circle flex-shrink-0" [style.background]="arco.color" style="width: 10px; height: 10px"></span>
-            <span class="text-body-secondary flex-grow-1">{{ arco.etiqueta }}</span>
-            <span class="fw-semibold">{{ arco.valor }}</span>
-            <span class="text-body-secondary text-end" style="min-width: 3ch; font-variant-numeric: tabular-nums">
-              {{ arco.pct }}%
-            </span>
+          <li class="donut__legend-item">
+            <span class="donut__swatch" [style.background]="arco.color"></span>
+            <span class="donut__legend-label">{{ arco.etiqueta }}</span>
+            <span class="donut__legend-value">{{ arco.valor }}</span>
+            <span class="donut__legend-pct">{{ arco.pct }}%</span>
           </li>
         }
       </ul>
     </div>
   `,
   styles: `
-    :host {
-      display: block;
+    :host { display: block; }
+
+    .donut {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-5);
     }
 
-    .donut-ring {
-      animation: donut-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    .donut__ring {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      animation: donut-in 900ms var(--transition-slow) both;
     }
 
-    .donut-track {
+    svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .donut__track {
       fill: none;
-      stroke: var(--bs-secondary-bg);
+      stroke: var(--surface-3);
       stroke-width: 4.4;
     }
 
-    .donut-arc {
+    .donut__arc {
       fill: none;
       stroke-width: 4.4;
       stroke-linecap: round;
-      transition: stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1);
+      transition: stroke-dasharray 900ms var(--transition-slow);
+    }
+
+    .donut__center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      text-align: center;
+    }
+
+    .donut__total {
+      font-size: var(--fs-3xl);
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+
+    .donut__total-label {
+      font-size: var(--fs-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+    }
+
+    .donut__legend {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      width: 100%;
+    }
+
+    .donut__legend-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--fs-sm);
+    }
+
+    .donut__swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .donut__legend-label { color: var(--text-2); }
+    .donut__legend-value { font-weight: 600; color: var(--text); }
+    .donut__legend-pct {
+      min-width: 3ch;
+      text-align: right;
+      color: var(--text-3);
+      font-variant-numeric: tabular-nums;
     }
 
     @keyframes donut-in {
-      from {
-        opacity: 0;
-        transform: scale(0.85);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
     }
   `,
 })

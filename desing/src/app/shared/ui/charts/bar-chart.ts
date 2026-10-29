@@ -10,47 +10,81 @@ export interface BarraDato {
   selector: 'ui-bars',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="d-flex align-items-stretch gap-3 gap-md-4 pt-4" [style.height.px]="altura()">
+    <div class="bars" [style.height.px]="altura()">
       @for (barra of barras(); track barra.etiqueta; let i = $index) {
-        <div class="flex-fill d-flex flex-column align-items-center gap-2" style="min-width: 0">
-          <span class="fw-semibold" style="font-variant-numeric: tabular-nums">{{ barra.valor }}</span>
-          <div
-            class="flex-grow-1 w-100 d-flex align-items-end bg-body-secondary rounded-3 overflow-hidden"
-            style="max-width: 68px"
-          >
+        <div class="bars__col">
+          <span class="bars__value">{{ barra.valor }}</span>
+          <div class="bars__track">
             <div
-              class="w-100 rounded-3 bar-fill"
+              class="bars__fill"
               [style.height.%]="barra.pct"
               [style.background]="barra.color"
               [style.animation-delay]="i * 90 + 'ms'"
             ></div>
           </div>
-          <span class="small fw-semibold text-body-secondary text-center text-truncate w-100">
-            {{ barra.etiqueta }}
-          </span>
+          <span class="bars__label">{{ barra.etiqueta }}</span>
         </div>
       }
     </div>
   `,
   styles: `
-    :host {
-      display: block;
+    :host { display: block; }
+
+    .bars {
+      display: flex;
+      align-items: stretch;
+      gap: clamp(var(--space-3), 3vw, var(--space-6));
+      padding-top: var(--space-5);
     }
 
-    .bar-fill {
+    .bars__col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .bars__value {
+      font-size: var(--fs-lg);
+      font-weight: 600;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bars__track {
+      flex: 1;
+      width: 100%;
+      max-width: 68px;
+      display: flex;
+      align-items: flex-end;
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+
+    .bars__fill {
+      width: 100%;
+      border-radius: var(--radius);
       transform-origin: bottom;
-      animation: bar-grow 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: bar-grow 900ms var(--transition-slow) both;
+    }
+
+    .bars__label {
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      color: var(--text-2);
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     @keyframes bar-grow {
-      from {
-        transform: scaleY(0);
-        opacity: 0.4;
-      }
-      to {
-        transform: scaleY(1);
-        opacity: 1;
-      }
+      from { transform: scaleY(0); opacity: 0.4; }
+      to { transform: scaleY(1); opacity: 1; }
     }
   `,
 })

@@ -1,46 +1,212 @@
+@use 'breakpoints' as bp;
+
+/**
+ * Shell de todos los paneles con la geometría del original:
+ * barra superior de 48px, marca de 48px, sidebar de 264px y contenido con
+ * padding fluido clamp(20px, 3vw, 32px).
+ */
 :host {
   display: block;
   min-height: 100dvh;
 }
 
+.app-shell {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+/* ===== Sidebar ===== */
 .app-sidebar {
-  background-color: var(--shell-surface);
-  width: 264px;
-  flex: 0 0 264px;
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
   height: 100vh;
   position: sticky;
   top: 0;
   overflow-y: auto;
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-fg);
+  border-color: var(--sidebar-border) !important;
   transition: margin-left 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .app-shell:not(.app-shell--open) .app-sidebar {
-  margin-left: -264px;
+  margin-left: calc(var(--sidebar-w) * -1);
 }
 
-.app-sidebar .nav-link {
-  color: var(--bs-secondary-color);
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--topbar-h);
+  padding: 0 var(--space-5);
+  border-color: var(--sidebar-border) !important;
+}
+
+.app-brand__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  flex: none;
+}
+
+.app-brand__mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.app-brand__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.app-brand__title {
+  font-weight: 600;
+  color: var(--sidebar-fg-strong);
+}
+
+.app-brand__sub {
+  font-size: var(--fs-xs);
+  color: var(--sidebar-fg);
+}
+
+.app-nav {
+  display: flex;
+  padding: var(--space-5) var(--space-3);
+  gap: var(--space-1);
+  overflow-y: auto;
+}
+
+.app-nav__label {
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sidebar-fg);
+}
+
+.app-nav__item.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-fg);
+  font-size: var(--fs-md);
   font-weight: 500;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+
+  > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    background: var(--surface-2);
+    color: var(--sidebar-fg-strong);
+  }
+
+  &:focus-visible {
+    box-shadow: none;
+    outline: 2px solid var(--brand);
+    outline-offset: -2px;
+  }
 }
 
-.app-sidebar .nav-link:hover {
-  background: var(--bs-secondary-bg);
-  color: var(--bs-emphasis-color);
-}
-
-.app-sidebar .nav-link.active {
-  background: var(--bs-secondary-bg);
-  color: var(--bs-emphasis-color);
+.app-nav__item--active.nav-link,
+.app-nav__item--active.nav-link:hover {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
   font-weight: 600;
 }
 
+.app-sidebar__foot {
+  padding: var(--space-3);
+  border-color: var(--sidebar-border) !important;
+}
+
+.app-panel-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sidebar-fg);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast);
+
+  &:hover {
+    background: var(--surface-2);
+    color: var(--sidebar-fg-strong);
+    border-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    box-shadow: var(--ring);
+    outline: none;
+  }
+}
+
+/* ===== Barra superior ===== */
 .app-topbar {
-  background-color: var(--shell-surface);
   position: sticky;
   top: 0;
-  z-index: 1020;
-  min-height: 56px;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  padding: 0 var(--space-6);
+  background-color: var(--surface);
+  border-color: var(--border) !important;
+
+  @include bp.down(md) {
+    padding: 0 var(--space-4);
+  }
+}
+
+.app-icon-btn.btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--text-2);
+
+  &:hover {
+    background-color: var(--surface-3);
+    color: var(--text);
+  }
+}
+
+.app-topbar .breadcrumb {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--text-3);
+}
+
+.app-topbar .breadcrumb-item.active {
+  color: var(--text);
+  font-weight: 600;
 }
 
 .app-menu-icon {
@@ -71,11 +237,56 @@
   transform: rotate(0deg);
 }
 
+.app-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-left: var(--space-3);
+  border-color: var(--border) !important;
+  min-width: 0;
+
+  @include bp.down(md) {
+    display: none;
+  }
+}
+
+.app-user__info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+  max-width: 180px;
+}
+
+.app-user__name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-user__mail {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Contenido ===== */
+.app-content {
+  width: 100%;
+  min-width: 0;
+  padding: clamp(var(--space-5), 3vw, var(--space-8));
+}
+
+/* ===== Drawer en pantallas pequeñas ===== */
 @media (max-width: 1023.98px) {
   .app-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 1045;
+    z-index: var(--z-drawer);
     margin-left: 0;
     transform: translateX(-100%);
     transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -89,8 +300,9 @@
   .app-sidebar-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 1040;
-    background: rgba(0, 0, 0, 0.42);
+    z-index: calc(var(--z-drawer) - 5);
+    background: var(--overlay);
+    animation: ui-fade-in var(--transition) both;
   }
 }
 

@@ -1,46 +1,44 @@
-<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+<header class="page-head">
   <div>
-    <h1 class="h3 mb-1">Casos</h1>
-    <p class="text-body-secondary mb-0">
+    <h1 class="page-head__title">Casos</h1>
+    <p class="page-head__sub">
       Transacciones que no superaron el motor de reglas y esperan la decisión del analista.
     </p>
   </div>
 </header>
 
-<div class="d-flex flex-wrap align-items-stretch gap-2 mb-3">
-  <div class="input-group flex-grow-1" style="min-width: 220px">
-    <span class="input-group-text bg-body text-body-secondary">
-      <ui-icon name="search" [size]="18" />
-    </span>
+<div class="toolbar">
+  <div class="ui-search toolbar__grow">
+    <ui-icon name="search" [size]="18" />
     <input
       type="search"
-      class="form-control"
+      class="ui-input"
       placeholder="Buscar por caso, referencia, cuenta o titular…"
       [value]="busqueda()"
       (input)="buscar($any($event.target).value)"
     />
   </div>
-  <select class="form-select" style="width: auto; min-width: 165px" (change)="cambiarFiltroEstado($any($event.target).value)">
+  <select class="ui-input toolbar__select" (change)="cambiarFiltroEstado($any($event.target).value)">
     <option value="ABIERTO">Solo abiertos</option>
     <option value="TODOS">Todos los estados</option>
     <option value="RESUELTO">Resueltos</option>
     <option value="RECHAZADO">Rechazados</option>
   </select>
-  <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" (click)="cargar()" [disabled]="cargando()">
+  <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()" [disabled]="cargando()">
     <ui-icon name="refresh" [size]="16" />
     Actualizar
   </button>
 </div>
 
-<div class="card overflow-hidden">
+<div class="table-card">
   @if (cargando()) {
-    <div class="d-flex align-items-center justify-content-center gap-2 py-5 text-body-secondary">
-      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+    <div class="loading">
+      <span class="ui-spinner"></span>
       Cargando casos…
     </div>
   } @else if (error()) {
     <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
-      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mt-3" (click)="cargar()">
+      <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
         <ui-icon name="refresh" [size]="16" /> Reintentar
       </button>
     </ui-empty>
@@ -55,8 +53,8 @@
           : 'Los casos aparecerán aquí cuando una transacción quede pendiente.'"
     />
   } @else {
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0" appColumnasRedimensionables>
+    <div class="ui-table-wrap">
+      <table class="ui-table" appColumnasRedimensionables>
         <thead>
           <tr>
             <th>Caso</th>
@@ -68,7 +66,7 @@
             <th>Reglas</th>
             <th>Estado</th>
             <th>Fecha</th>
-            <th class="text-end">Acciones</th>
+            <th class="col-actions">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -99,27 +97,45 @@
               <td>
                 <span [class]="resumenReglasClass(caso)">
                   @if (reglasTotal(caso) > 0) {
-                    <ui-icon [name]="reglasFallidas(caso) === 0 ? 'check' : 'xCircle'" [size]="14" />
+                    <ui-icon
+                      [name]="reglasFallidas(caso) === 0 ? 'check' : 'xCircle'"
+                      [size]="14"
+                    />
                   }
                   {{ resumenReglas(caso) }}
                 </span>
               </td>
               <td>
                 <span [class]="badgeCasoClass(caso.estado)">
-                  <span class="dot"></span> {{ estadoCasoLabel(caso.estado) }}
+                  <span class="ui-dot"></span> {{ estadoCasoLabel(caso.estado) }}
                 </span>
               </td>
-              <td class="text-body-secondary text-nowrap">{{ caso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="u-muted">{{ caso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
               <td>
-                <div class="d-flex align-items-center justify-content-end gap-1">
-                  <button type="button" class="btn btn-outline-secondary btn-sm" title="Ver detalle y reglas" (click)="abrirDetalle(caso)">
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="ui-icon-btn"
+                    title="Ver detalle y reglas"
+                    (click)="abrirDetalle(caso)"
+                  >
                     <ui-icon name="info" [size]="18" />
                   </button>
                   @if (puedeResolver(caso)) {
-                    <button type="button" class="btn btn-outline-success btn-sm" title="Aprobar caso" (click)="pedirDecision(caso, 'APROBADA')">
+                    <button
+                      type="button"
+                      class="ui-icon-btn"
+                      title="Aprobar caso"
+                      (click)="pedirDecision(caso, 'APROBADA')"
+                    >
                       <ui-icon name="check" [size]="18" />
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" title="Rechazar caso" (click)="pedirDecision(caso, 'RECHAZADA')">
+                    <button
+                      type="button"
+                      class="ui-icon-btn ui-icon-btn--danger"
+                      title="Rechazar caso"
+                      (click)="pedirDecision(caso, 'RECHAZADA')"
+                    >
                       <ui-icon name="xCircle" [size]="18" />
                     </button>
                   }
@@ -141,54 +157,72 @@
   }
 </div>
 
-<ui-modal [abierto]="detalle() !== null" titulo="Detalle del caso" [subtitulo]="detalle()?.numeroCaso ?? ''" ancho="lg" (cerrar)="detalle.set(null)">
+<ui-modal
+  [abierto]="detalle() !== null"
+  titulo="Detalle del caso"
+  [subtitulo]="detalle()?.numeroCaso ?? ''"
+  ancho="lg"
+  (cerrar)="detalle.set(null)"
+>
   @if (detalle(); as caso) {
-    <div class="row g-3 p-3 border rounded-3 bg-body-tertiary mb-4">
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Referencia</span>
-        <span class="d-block">{{ caso.transaccion.referencia }}</span>
+    <div class="detalle-grid">
+      <div class="detalle-item">
+        <span class="detalle-label">Referencia</span>
+        <span class="detalle-value">{{ caso.transaccion.referencia }}</span>
       </div>
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Tipo</span>
-        <span class="d-block">{{ tipoLabel(caso.transaccion.tipoTransaccion) }}</span>
+      <div class="detalle-item">
+        <span class="detalle-label">Tipo</span>
+        <span class="detalle-value">{{ tipoLabel(caso.transaccion.tipoTransaccion) }}</span>
       </div>
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Monto</span>
-        <span class="d-block">{{ soles(caso.transaccion.monto) }}</span>
+      <div class="detalle-item">
+        <span class="detalle-label">Monto</span>
+        <span class="detalle-value">{{ soles(caso.transaccion.monto) }}</span>
       </div>
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Estado del caso</span>
-        <span class="d-block">{{ estadoCasoLabel(caso.estado) }}</span>
+      <div class="detalle-item">
+        <span class="detalle-label">Estado del caso</span>
+        <span class="detalle-value">{{ estadoCasoLabel(caso.estado) }}</span>
       </div>
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Cuenta origen</span>
-        <span class="d-block">{{ caso.cuentaOrigenNumero || '—' }}</span>
+      <div class="detalle-item">
+        <span class="detalle-label">Cuenta origen</span>
+        <span class="detalle-value">{{ caso.cuentaOrigenNumero || '—' }}</span>
         <span class="cell-sub">{{ caso.transaccion.cuentaOrigenTitular || 'Sin titular' }}</span>
       </div>
-      <div class="col-6 col-md-4">
-        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Cuenta destino</span>
-        <span class="d-block">{{ caso.cuentaDestinoNumero || '—' }}</span>
+      <div class="detalle-item">
+        <span class="detalle-label">Cuenta destino</span>
+        <span class="detalle-value">{{ caso.cuentaDestinoNumero || '—' }}</span>
         <span class="cell-sub">{{ caso.transaccion.cuentaDestinoTitular || 'Sin titular' }}</span>
       </div>
     </div>
 
     @if (caso.transaccion.descripcion) {
-      <p class="alert alert-secondary d-flex align-items-start gap-2 small">
-        <ui-icon name="info" [size]="16" class="flex-shrink-0 mt-1" />
-        <span>{{ caso.transaccion.descripcion }}</span>
+      <p class="notice">
+        <ui-icon name="info" [size]="16" />
+        {{ caso.transaccion.descripcion }}
       </p>
     }
 
-    <h3 class="h6 fw-semibold mt-4 mb-3">Evaluación de reglas</h3>
+    <h3 class="detalle-title" style="margin-top: var(--space-5)">Evaluación de reglas</h3>
     <app-reglas-evaluacion [reglas]="caso.transaccion.reglas || []" />
   }
 
-  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
-    <button type="button" class="btn btn-outline-secondary" (click)="detalle.set(null)">Cerrar</button>
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="detalle.set(null)">Cerrar</button>
     @if (detalle(); as caso) {
       @if (puedeResolver(caso)) {
-        <button type="button" class="btn btn-danger" (click)="pedirDecision(caso, 'RECHAZADA')">Rechazar</button>
-        <button type="button" class="btn btn-primary" (click)="pedirDecision(caso, 'APROBADA')">Aprobar</button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--danger"
+          (click)="pedirDecision(caso, 'RECHAZADA')"
+        >
+          Rechazar
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn--primary"
+          (click)="pedirDecision(caso, 'APROBADA')"
+        >
+          Aprobar
+        </button>
       }
     }
   </div>
@@ -203,24 +237,17 @@
   (cerrar)="cerrarDecision()"
 >
   @if (decision(); as d) {
-    <div class="d-flex align-items-start gap-3">
-      <span
-        class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
-        style="width: 44px; height: 44px"
-        [class.bg-success-subtle]="d.estado === 'APROBADA'"
-        [class.text-success]="d.estado === 'APROBADA'"
-        [class.bg-danger-subtle]="d.estado === 'RECHAZADA'"
-        [class.text-danger]="d.estado === 'RECHAZADA'"
-      >
+    <div class="decision">
+      <span class="decision__icon" [class.decision__icon--danger]="d.estado === 'RECHAZADA'">
         <ui-icon [name]="d.estado === 'APROBADA' ? 'check' : 'xCircle'" [size]="22" />
       </span>
-      <div style="min-width: 0">
-        <p class="fw-semibold mb-1">
+      <div>
+        <p class="decision__title">
           {{ d.estado === 'APROBADA' ? '¿Aprobar esta transacción?' : '¿Rechazar esta transacción?' }}
         </p>
-        <p class="text-body-secondary small mb-0">
+        <p class="decision__desc">
           {{ d.caso.transaccion.referencia }} por
-          <strong class="text-body">{{ soles(d.caso.transaccion.monto) }}</strong>
+          <strong>{{ soles(d.caso.transaccion.monto) }}</strong>
           @if (d.estado === 'APROBADA') {
             · se aplicará a los saldos de las cuentas.
           } @else {
@@ -230,18 +257,18 @@
       </div>
     </div>
   }
-  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
-    <button type="button" class="btn btn-outline-secondary" (click)="cerrarDecision()">Cancelar</button>
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarDecision()">Cancelar</button>
     <button
       type="button"
-      class="btn d-inline-flex align-items-center gap-2"
-      [class.btn-primary]="decision()?.estado === 'APROBADA'"
-      [class.btn-danger]="decision()?.estado === 'RECHAZADA'"
+      class="ui-btn"
+      [class.ui-btn--primary]="decision()?.estado === 'APROBADA'"
+      [class.ui-btn--danger]="decision()?.estado === 'RECHAZADA'"
       (click)="confirmarDecision()"
       [disabled]="decidiendo()"
     >
       @if (decidiendo()) {
-        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        <span class="ui-spinner" style="width: 16px; height: 16px"></span>
       }
       {{ decision()?.estado === 'APROBADA' ? 'Aprobar' : 'Rechazar' }}
     </button>

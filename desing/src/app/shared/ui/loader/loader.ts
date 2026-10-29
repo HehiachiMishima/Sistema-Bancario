@@ -6,41 +6,66 @@ import { Carga } from '../../../core/services/carga';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (carga.visible()) {
-      <div class="app-loader" role="status" aria-live="polite">
-        <div class="text-center">
-          <div
-            class="spinner-border text-primary"
-            style="width: 3.5rem; height: 3.5rem"
-            aria-hidden="true"
-          ></div>
-          <p class="mt-3 mb-0 fw-semibold text-body-secondary">{{ carga.texto() }}</p>
+      <div class="loader" role="status" aria-live="polite">
+        <div class="loader__box">
+          <span class="loader__ring"></span>
+          <p class="loader__text">{{ carga.texto() }}</p>
         </div>
       </div>
     }
   `,
   styles: `
-    :host {
-      display: contents;
-    }
+    :host { display: contents; }
 
-    .app-loader {
+    .loader {
       position: fixed;
       inset: 0;
-      z-index: 2000;
+      z-index: var(--z-loader);
       display: grid;
       place-items: center;
-      background: color-mix(in srgb, var(--bs-body-bg) 78%, transparent);
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
       backdrop-filter: blur(8px);
-      animation: loader-fade 240ms ease both;
+      animation: loader-fade var(--transition) both;
+    }
+
+    .loader__box {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-8) var(--space-10);
+      animation: loader-pop var(--transition-slow) both;
+    }
+
+    .loader__ring {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--brand);
+      border-right-color: color-mix(in srgb, var(--brand) 35%, transparent);
+      animation: ui-spin 0.9s linear infinite;
+    }
+
+    .loader__text {
+      font-size: var(--fs-md);
+      font-weight: 600;
+      color: var(--text-2);
     }
 
     @keyframes loader-fade {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes loader-pop {
+      from { opacity: 0; transform: translateY(8px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes ui-spin {
+      to { transform: rotate(360deg); }
     }
   `,
 })

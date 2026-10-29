@@ -8,6 +8,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { Icon } from '../icon/icon';
 
 export type AnchoModal = 'sm' | 'md' | 'lg';
 
@@ -17,53 +18,44 @@ const ENFOCABLES =
 @Component({
   selector: 'ui-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [Icon],
   host: {
     '(document:keydown)': 'alTecla($event)',
   },
   template: `
     @if (abierto()) {
-      <div class="modal show d-block" tabindex="-1" (click)="alClicFondo($event)">
-        <div
-          class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
-          [class.modal-sm]="ancho() === 'sm'"
-          [class.modal-lg]="ancho() === 'lg'"
-          [class.modal-compacto]="compacto()"
+      <div class="ui-modal-backdrop" (click)="alClicFondo($event)" tabindex="-1">
+        <section
+          #dialogo
+          class="ui-modal"
+          [class]="'ui-modal--' + ancho()"
+          [class.ui-modal--compacto]="compacto()"
+          role="dialog"
+          aria-modal="true"
+          tabindex="-1"
+          [attr.aria-label]="titulo()"
         >
-          <section
-            #dialogo
-            class="modal-content"
-            role="dialog"
-            aria-modal="true"
-            tabindex="-1"
-            [attr.aria-label]="titulo()"
-          >
-            <header class="modal-header">
-              <div class="me-3">
-                <h2 class="modal-title fs-5">{{ titulo() }}</h2>
-                @if (subtitulo()) {
-                  <p class="text-body-secondary small mb-0">{{ subtitulo() }}</p>
-                }
-              </div>
-              <button type="button" class="btn-close" (click)="cerrar.emit()" aria-label="Cerrar"></button>
-            </header>
-
-            <div class="modal-body">
-              <ng-content />
+          <header class="ui-modal__header">
+            <div class="ui-modal__heading">
+              <h2 class="ui-modal__title">{{ titulo() }}</h2>
+              @if (subtitulo()) {
+                <p class="ui-modal__subtitle">{{ subtitulo() }}</p>
+              }
             </div>
+            <button type="button" class="ui-icon-btn" (click)="cerrar.emit()" aria-label="Cerrar">
+              <ui-icon name="close" [size]="18" />
+            </button>
+          </header>
 
-            <div class="modal-footer">
-              <ng-content select="[modal-footer]" />
-            </div>
-          </section>
-        </div>
+          <div class="ui-modal__body">
+            <ng-content />
+          </div>
+
+          <div class="ui-modal__footer">
+            <ng-content select="[modal-footer]" />
+          </div>
+        </section>
       </div>
-      <div class="modal-backdrop fade show"></div>
-    }
-  `,
-  styles: `
-    :host {
-      display: contents;
     }
   `,
 })

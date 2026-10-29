@@ -1,35 +1,37 @@
-<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+<header class="page-head">
   <div>
-    <h1 class="h3 mb-1">Permisos</h1>
-    <p class="text-body-secondary mb-0">Catálogo de permisos del sistema.</p>
+    <h1 class="page-head__title">Permisos</h1>
+    <p class="page-head__sub">Catálogo de permisos del sistema.</p>
   </div>
-  <button *hasPermiso="permisos.CREAR_PERMISOS" type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="abrirCrear()">
+  <button *hasPermiso="permisos.CREAR_PERMISOS" type="button" class="ui-btn ui-btn--primary" (click)="abrirCrear()">
     <ui-icon name="plus" [size]="18" />
     Nuevo permiso
   </button>
 </header>
 
-<div class="d-flex flex-wrap align-items-stretch gap-2 mb-3">
-  <div class="input-group flex-grow-1" style="min-width: 220px">
-    <span class="input-group-text bg-body text-body-secondary">
-      <ui-icon name="search" [size]="18" />
-    </span>
-    <input type="search" class="form-control" placeholder="Buscar permiso…" [value]="busqueda()" (input)="buscar($any($event.target).value)" />
+<div class="toolbar">
+  <div class="ui-search toolbar__grow">
+    <ui-icon name="search" [size]="18" />
+    <input
+      type="search"
+      class="ui-input"
+      placeholder="Buscar permiso…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
   </div>
-  <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" (click)="cargar()" [disabled]="cargando()">
+  <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()" [disabled]="cargando()">
     <ui-icon name="refresh" [size]="16" />
     Actualizar
   </button>
 </div>
 
-<div class="card overflow-hidden">
+<div class="table-card">
   @if (cargando()) {
-    <div class="d-flex align-items-center justify-content-center gap-2 py-5 text-body-secondary">
-      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando permisos…
-    </div>
+    <div class="loading"><span class="ui-spinner"></span> Cargando permisos…</div>
   } @else if (error()) {
     <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
-      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mt-3" (click)="cargar()">
+      <button type="button" class="ui-btn ui-btn--secondary ui-btn--sm" (click)="cargar()">
         <ui-icon name="refresh" [size]="16" /> Reintentar
       </button>
     </ui-empty>
@@ -40,8 +42,8 @@
       [mensaje]="busqueda() ? 'Ningún permiso coincide con la búsqueda.' : 'Crea el primer permiso del catálogo.'"
     ></ui-empty>
   } @else {
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0" appColumnasRedimensionables>
+    <div class="ui-table-wrap">
+      <table class="ui-table" appColumnasRedimensionables>
         <thead>
           <tr>
             <th>Permiso</th>
@@ -51,45 +53,62 @@
             <th>Actualizado por</th>
             <th>Creado</th>
             <th>Actualizado</th>
-            <th class="text-end">Acciones</th>
+            <th class="col-actions">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (permiso of paginados(); track permiso.id) {
             <tr>
-              <td><span class="fw-semibold text-body font-monospace small">{{ permiso.nombre }}</span></td>
+              <td><span class="ui-table__primary u-mono">{{ permiso.nombre }}</span></td>
               <td>{{ permiso.descripcion || '—' }}</td>
               <td>
                 @if (permiso.activo) {
-                  <span class="badge rounded-pill text-bg-success"><span class="dot"></span> Activo</span>
+                  <span class="ui-badge ui-badge--success"><span class="ui-dot"></span> Activo</span>
                 } @else {
-                  <span class="badge rounded-pill text-bg-secondary"><span class="dot"></span> Inactivo</span>
+                  <span class="ui-badge ui-badge--neutral"><span class="ui-dot"></span> Inactivo</span>
                 }
               </td>
-              <td class="text-body-secondary">{{ permiso.creadoPor | actorLabel }}</td>
-              <td class="text-body-secondary">{{ permiso.actualizadoPor | actorLabel }}</td>
-              <td class="text-body-secondary text-nowrap">{{ permiso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
-              <td class="text-body-secondary text-nowrap">{{ permiso.actualizadoEn ? (permiso.actualizadoEn | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td class="u-muted">{{ permiso.creadoPor | actorLabel }}</td>
+              <td class="u-muted">{{ permiso.actualizadoPor | actorLabel }}</td>
+              <td class="u-muted">{{ permiso.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="u-muted">{{ permiso.actualizadoEn ? (permiso.actualizadoEn | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
               <td>
-                <div class="d-flex align-items-center justify-content-end gap-1">
-                  <button *hasPermiso="permisos.ASIGNAR_ROLES" type="button" class="btn btn-outline-secondary btn-sm" title="Roles con este permiso" (click)="abrirRoles(permiso)">
+                <div class="row-actions">
+                  <button
+                    *hasPermiso="permisos.ASIGNAR_ROLES"
+                    type="button"
+                    class="ui-icon-btn"
+                    title="Roles con este permiso"
+                    (click)="abrirRoles(permiso)"
+                  >
                     <ui-icon name="shieldCheck" [size]="18" />
                   </button>
-                  <button *hasPermiso="permisos.MODIFICAR_PERMISOS" type="button" class="btn btn-outline-secondary btn-sm" title="Editar" (click)="abrirEditar(permiso)">
+                  <button
+                    *hasPermiso="permisos.MODIFICAR_PERMISOS"
+                    type="button"
+                    class="ui-icon-btn"
+                    title="Editar"
+                    (click)="abrirEditar(permiso)"
+                  >
                     <ui-icon name="edit" [size]="18" />
                   </button>
                   <button
                     *hasPermiso="permisos.MODIFICAR_PERMISOS"
                     type="button"
-                    class="btn btn-sm"
-                    [class.btn-outline-secondary]="!permiso.activo"
-                    [class.btn-outline-danger]="permiso.activo"
+                    class="ui-icon-btn"
+                    [class.ui-icon-btn--danger]="permiso.activo"
                     [title]="permiso.activo ? 'Desactivar' : 'Activar'"
                     (click)="toggleActivo(permiso)"
                   >
                     <ui-icon name="power" [size]="18" />
                   </button>
-                  <button *hasPermiso="permisos.ELIMINAR_PERMISOS" type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" (click)="confirmarEliminar(permiso)">
+                  <button
+                    *hasPermiso="permisos.ELIMINAR_PERMISOS"
+                    type="button"
+                    class="ui-icon-btn ui-icon-btn--danger"
+                    title="Eliminar"
+                    (click)="confirmarEliminar(permiso)"
+                  >
                     <ui-icon name="trash" [size]="18" />
                   </button>
                 </div>
@@ -110,37 +129,32 @@
   }
 </div>
 
-<ui-modal [abierto]="formAbierto()" [titulo]="editando() ? 'Editar permiso' : 'Nuevo permiso'" (cerrar)="cerrarForm()">
-  <form class="row g-3" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
-    <div class="col-12">
-      <label class="form-label small fw-semibold" for="permiso-nombre">Nombre <span class="text-danger">*</span></label>
-      <input
-        id="permiso-nombre"
-        class="form-control font-monospace"
-        [class.is-invalid]="campoInvalido('nombre')"
-        formControlName="nombre"
-        placeholder="VER_REPORTES"
-      />
-      @if (campoInvalido('nombre')) {
-        <div class="invalid-feedback d-block">El nombre es obligatorio.</div>
-      }
+<ui-modal
+  [abierto]="formAbierto()"
+  [titulo]="editando() ? 'Editar permiso' : 'Nuevo permiso'"
+  (cerrar)="cerrarForm()"
+>
+  <form class="grid-form" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <div class="ui-field" style="grid-column: 1 / -1">
+      <label class="ui-label">Nombre <span class="ui-required">*</span></label>
+      <input class="ui-input u-mono" [class.ui-input--invalid]="campoInvalido('nombre')" formControlName="nombre" placeholder="VER_REPORTES" />
+      @if (campoInvalido('nombre')) { <span class="ui-error">El nombre es obligatorio.</span> }
     </div>
-    <div class="col-12">
-      <label class="form-label small fw-semibold" for="permiso-descripcion">Descripción</label>
-      <textarea id="permiso-descripcion" class="form-control" rows="3" formControlName="descripcion" placeholder="Qué habilita este permiso"></textarea>
+    <div class="ui-field" style="grid-column: 1 / -1">
+      <label class="ui-label">Descripción</label>
+      <textarea class="ui-textarea" formControlName="descripcion" placeholder="Qué habilita este permiso"></textarea>
     </div>
-    <div class="col-12">
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" id="permiso-activo" formControlName="activo" />
-        <label class="form-check-label" for="permiso-activo">Permiso activo</label>
-      </div>
-    </div>
+    <label class="check">
+      <input type="checkbox" formControlName="activo" />
+      <span class="check__box"><ui-icon name="check" [size]="14" /></span>
+      <span>Permiso activo</span>
+    </label>
   </form>
 
-  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
-    <button type="button" class="btn btn-outline-secondary" (click)="cerrarForm()">Cancelar</button>
-    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="guardar()" [disabled]="guardando()">
-      @if (guardando()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--primary" (click)="guardar()" [disabled]="guardando()">
+      @if (guardando()) { <span class="ui-spinner" style="width:16px;height:16px"></span> }
       {{ editando() ? 'Guardar cambios' : 'Crear permiso' }}
     </button>
   </div>
@@ -148,58 +162,55 @@
 
 <ui-modal [abierto]="eliminarAbierto()" ancho="sm" [compacto]="true" titulo="Eliminar permiso" (cerrar)="eliminarAbierto.set(false)">
   @if (aEliminar(); as permiso) {
-    <div class="d-flex align-items-start gap-3">
-      <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger-subtle text-danger flex-shrink-0" style="width: 46px; height: 46px">
-        <ui-icon name="trash" [size]="22" />
-      </span>
-      <div style="min-width: 0">
-        <p class="fw-semibold mb-1">
-          ¿Eliminar el permiso <span class="font-monospace">{{ permiso.nombre }}</span>?
-        </p>
-        <p class="text-body-secondary small mb-0">Esta acción no se puede deshacer.</p>
+    <div class="confirm">
+      <span class="confirm__icon"><ui-icon name="trash" [size]="22" /></span>
+      <div class="confirm__text">
+        <p class="confirm__title">¿Eliminar el permiso <span class="u-mono">{{ permiso.nombre }}</span>?</p>
+        <p class="confirm__desc">Esta acción no se puede deshacer.</p>
       </div>
     </div>
   }
-  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
-    <button type="button" class="btn btn-outline-secondary" (click)="eliminarAbierto.set(false)">Cancelar</button>
-    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-2" (click)="eliminar()" [disabled]="eliminando()">
-      @if (eliminando()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--ghost" (click)="eliminarAbierto.set(false)">Cancelar</button>
+    <button type="button" class="ui-btn ui-btn--danger" (click)="eliminar()" [disabled]="eliminando()">
+      @if (eliminando()) { <span class="ui-spinner" style="width:16px;height:16px"></span> }
       Eliminar
     </button>
   </div>
 </ui-modal>
 
-<ui-modal [abierto]="rolesAbierto()" titulo="Roles con este permiso" [subtitulo]="permisoRoles()?.nombre ?? ''" (cerrar)="rolesAbierto.set(false)">
-  <p class="p-3 bg-body-tertiary border rounded-3 small text-body-secondary mb-3">
+<ui-modal
+  [abierto]="rolesAbierto()"
+  titulo="Roles con este permiso"
+  [subtitulo]="permisoRoles()?.nombre ?? ''"
+  (cerrar)="rolesAbierto.set(false)"
+>
+  <p class="modal-hint">
     Estos son los roles activos que conceden este permiso. La asignación se hace desde la pantalla de Roles.
   </p>
   @if (cargandoRoles()) {
-    <div class="d-flex align-items-center justify-content-center gap-2 py-4 text-body-secondary">
-      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando…
-    </div>
+    <div class="loading"><span class="ui-spinner"></span> Cargando…</div>
   } @else if (rolesConPermiso().length === 0) {
     <ui-empty icono="roles" titulo="Sin roles" mensaje="Ningún rol concede este permiso todavía." />
   } @else {
-    <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+    <ul class="role-list">
       @for (rol of rolesConPermiso(); track rol.id) {
-        <li class="d-flex align-items-center gap-3 p-3 border rounded-3 bg-body-tertiary">
-          <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-body-secondary text-body-secondary flex-shrink-0" style="width: 36px; height: 36px">
-            <ui-icon name="shieldCheck" [size]="18" />
-          </span>
-          <span class="d-flex flex-column flex-grow-1" style="min-width: 0">
-            <span class="fw-semibold d-flex align-items-center gap-2">
+        <li class="role-item">
+          <span class="role-item__icon"><ui-icon name="shieldCheck" [size]="18" /></span>
+          <span class="role-item__text">
+            <span class="role-item__name">
               {{ rol.nombre }}
               @if (!rol.activo) {
-                <span class="badge rounded-pill text-bg-secondary">Inactivo</span>
+                <span class="ui-badge ui-badge--neutral">Inactivo</span>
               }
             </span>
-            <span class="small text-body-secondary text-truncate">{{ rol.descripcion || 'Sin descripción' }}</span>
+            <span class="role-item__desc">{{ rol.descripcion || 'Sin descripción' }}</span>
           </span>
         </li>
       }
     </ul>
   }
-  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
-    <button type="button" class="btn btn-primary" (click)="rolesAbierto.set(false)">Cerrar</button>
+  <div modal-footer class="modal-foot">
+    <button type="button" class="ui-btn ui-btn--primary" (click)="rolesAbierto.set(false)">Cerrar</button>
   </div>
 </ui-modal>

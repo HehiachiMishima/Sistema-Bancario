@@ -1,1 +1,23 @@
-/* Página construida con Bootstrap; .switch, .perm-item--* y .dot viven en styles/_components.scss. */
+// Estilos específicos de la página de usuarios.
+// La mayor parte del diseño se reutiliza desde el design system (_components.scss).
+
+.loading {
+  font-size: var(--fs-md);
+}
+
+.tag-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.ui-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.form-hint {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}

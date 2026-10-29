@@ -1,4 +1,9 @@
+/**
+ * Bootstrap 5.3 configurado con la geometría y la paleta de ./frontend.
+ * Todo lo que Bootstrap no parametriza se ajusta en styles/_components.scss.
+ */
 @use 'bootstrap/scss/bootstrap' with (
+  /* ===== Paleta ===== */
   $primary: #0071e3,
   $secondary: #707070,
   $success: #248a3d,
@@ -7,11 +12,15 @@
   $info: #6e6e73,
   $light: #f5f5f7,
   $dark: #1d1d1f,
+
   $body-bg: #f5f5f7,
   $body-color: #1d1d1f,
   $body-secondary-color: #707070,
   $body-tertiary-color: #86868b,
   $border-color: #e8e8ed,
+  $border-color-translucent: rgba(0, 0, 0, 0.1),
+
+  /* ===== Tipografía ===== */
   $font-family-sans-serif: (
     'SF Pro Text',
     -apple-system,
@@ -21,6 +30,13 @@
     'Segoe UI',
     Roboto,
     sans-serif,
+  ),
+  $font-family-monospace: (
+    'SFMono-Regular',
+    ui-monospace,
+    Menlo,
+    Consolas,
+    monospace,
   ),
   $headings-font-family: (
     'SF Pro Display',
@@ -34,12 +50,136 @@
     sans-serif,
   ),
   $headings-font-weight: 600,
+  $headings-line-height: 1.1,
+  $font-size-base: 1rem,
+  $line-height-base: 1.47,
+
+  /* ===== Superficie plana: sin sombras ni degradados ===== */
   $enable-shadows: false,
-  $border-radius: 0.75rem,
-  $border-radius-sm: 0.65rem,
-  $border-radius-lg: 0.9rem,
-  $border-radius-xl: 1.25rem,
-  $border-radius-xxl: 1.75rem
+  $enable-gradients: false,
+  $box-shadow: none,
+  $box-shadow-sm: none,
+  $box-shadow-lg: none,
+  $box-shadow-inset: none,
+
+  /* ===== Radios (frontend: 10 / 12 / 16 / 24 / 28 / pill) ===== */
+  $border-radius: 1rem,
+  $border-radius-sm: 0.625rem,
+  $border-radius-lg: 0.75rem,
+  $border-radius-xl: 1.5rem,
+  $border-radius-xxl: 1.75rem,
+  $border-radius-pill: 980px,
+
+  /* ===== Escala de espaciado 4/8/12/16/20/24/28/32/40/48/64 ===== */
+  $spacer: 16px,
+  $spacers: (
+    0: 0,
+    1: 4px,
+    2: 8px,
+    3: 12px,
+    4: 16px,
+    5: 20px,
+    6: 24px,
+    7: 28px,
+    8: 32px,
+    9: 40px,
+    10: 48px,
+    11: 64px,
+  ),
+
+  /* ===== Enlaces ===== */
+  $link-color: #0066cc,
+  $link-hover-color: #0071e3,
+  $link-decoration: none,
+  $link-hover-decoration: none,
+
+  /* ===== Formularios ===== */
+  $input-padding-y: 0.75rem,
+  $input-padding-x: 1rem,
+  $input-font-size: 1rem,
+  $input-border-radius: 1rem,
+  $input-border-radius-sm: 0.75rem,
+  $input-border-radius-lg: 0.875rem,
+  $input-border-color: #d2d2d7,
+  $input-focus-border-color: #0071e3,
+  $input-focus-box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.28),
+  $input-btn-focus-width: 4px,
+  $input-btn-focus-color: rgba(0, 113, 227, 0.28),
+  $input-btn-focus-box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.28),
+  $form-label-font-size: 0.875rem,
+  $form-label-font-weight: 600,
+  $form-label-margin-bottom: 0.5rem,
+  $form-text-font-size: 0.78rem,
+  $form-select-border-radius: 1rem,
+
+  /* ===== Botones ===== */
+  $btn-padding-y: 0.75rem,
+  $btn-padding-x: 1.25rem,
+  $btn-font-size: 0.95rem,
+  $btn-font-weight: 600,
+  $btn-border-radius: 980px,
+  $btn-border-radius-sm: 980px,
+  $btn-border-radius-lg: 980px,
+  $btn-line-height: 1.1,
+
+  /* ===== Tarjetas ===== */
+  $card-border-radius: 1.75rem,
+  $card-border-color: #e8e8ed,
+  $card-bg: #ffffff,
+  $card-cap-bg: transparent,
+  $card-spacer-y: 1.5rem,
+  $card-spacer-x: 1.5rem,
+
+  /* ===== Tablas ===== */
+  $table-cell-padding-y: 1rem,
+  $table-cell-padding-x: 1rem,
+  $table-color: #707070,
+  $table-border-color: #e8e8ed,
+  $table-hover-bg: #f5f5f7,
+  $table-th-font-weight: 600,
+
+  /* ===== Badges ===== */
+  $badge-font-size: 0.78rem,
+  $badge-font-weight: 600,
+  $badge-padding-y: 4px,
+  $badge-padding-x: 12px,
+  $badge-border-radius: 980px,
+
+  /* ===== Modales ===== */
+  $modal-content-border-radius: 1.75rem,
+  $modal-content-border-color: #e8e8ed,
+  $modal-content-bg: #ffffff,
+  $modal-header-padding-y: 1.25rem,
+  $modal-header-padding-x: 1.5rem,
+  $modal-inner-padding: 1.5rem,
+  $modal-sm: 420px,
+  $modal-md: 540px,
+  $modal-lg: 720px,
+  $modal-backdrop-bg: #000000,
+  $modal-backdrop-opacity: 0.42,
+
+  /* ===== Toasts ===== */
+  $toast-max-width: 380px,
+  $toast-padding-x: 1rem,
+  $toast-padding-y: 1rem,
+  $toast-border-radius: 1.75rem,
+  $toast-background-color: #ffffff,
+  $toast-border-color: #e8e8ed,
+
+  /* ===== Paginación ===== */
+  $pagination-padding-y: 0.4rem,
+  $pagination-padding-x: 0.6rem,
+  $pagination-font-size: 0.88rem,
+  $pagination-border-radius: 0.75rem,
+  $pagination-border-color: #e8e8ed,
+  $pagination-bg: #ffffff,
+  $pagination-color: #707070,
+  $pagination-hover-bg: #e8e8ed,
+  $pagination-hover-color: #1d1d1f,
+  $pagination-active-bg: #0071e3,
+  $pagination-active-border-color: #0071e3,
+  $pagination-disabled-bg: #ffffff,
+  $pagination-disabled-color: #86868b
 );
 
 @use 'styles/tokens';

@@ -1,12 +1,30 @@
+/**
+ * Base — mismo lienzo plano que ./frontend ("gallery vitrine in morning fog").
+ * La tipografía y el espacio negativo hacen todo el trabajo; sin sombras.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
   min-height: 100dvh;
+  font-family: var(--font-sf-pro-text);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  letter-spacing: -0.019em;
+  color: var(--text);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  letter-spacing: -0.011em;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -14,18 +32,167 @@ h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  margin: 0;
+  font-family: var(--font-sf-pro-display);
+  font-weight: 600;
+  line-height: var(--lh-tight);
   letter-spacing: -0.012em;
+  color: var(--text);
+  overflow-wrap: break-word;
   text-wrap: balance;
 }
 
+h1,
+.h1 {
+  font-size: var(--fs-3xl);
+  letter-spacing: -0.015em;
+}
+
+h2,
+.h2 {
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.02em;
+}
+
+h3,
+.h3 {
+  font-size: clamp(1.25rem, 1.1rem + 0.7vw, 1.6rem);
+}
+
+h4,
+.h4 {
+  font-size: var(--fs-lg);
+}
+
+h5,
+.h5 {
+  font-size: var(--fs-base);
+}
+
+h6,
+.h6 {
+  font-size: var(--fs-md);
+}
+
+.display-5,
+.display-6 {
+  font-family: var(--font-sf-pro-display);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.03em;
+}
+
+.display-5 {
+  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.2rem);
+}
+
+.display-6 {
+  font-size: clamp(1.8rem, 1.4rem + 1.8vw, 2.6rem);
+}
+
+/* Escala fluida de utilidades: los nombres de Bootstrap, los tamaños del original. */
+.fs-1 {
+  font-size: var(--fs-3xl) !important;
+}
+
+.fs-2 {
+  font-size: var(--fs-2xl) !important;
+}
+
+.fs-3 {
+  font-size: clamp(1.3rem, 1.1rem + 0.9vw, 1.6rem) !important;
+}
+
+.fs-4 {
+  font-size: var(--fs-lg) !important;
+}
+
+.fs-5 {
+  font-size: var(--fs-base) !important;
+}
+
+.fs-6 {
+  font-size: var(--fs-sm) !important;
+}
+
+.small,
+small {
+  font-size: var(--fs-sm);
+}
+
 p {
+  margin: 0;
   text-wrap: pretty;
+}
+
+a {
+  color: var(--color-link-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--brand-hover);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 img,
 svg {
+  display: block;
   max-width: 100%;
+}
+
+/* Bootstrap fija el foco por componente; aquí se unifica al anillo del original. */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-xs);
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.24);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
+
+/* Code y valores numéricos */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
 }
 
 app-root {

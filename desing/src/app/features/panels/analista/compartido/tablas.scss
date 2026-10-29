@@ -1,1 +1,156 @@
-/* Las celdas y tablas usan Bootstrap; las utilidades .ref/.cell-* viven en styles/_components.scss. */
+.toolbar__select {
+  width: auto;
+  min-width: 165px;
+  cursor: pointer;
+}
+
+.money {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ref {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ref-sub {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.cell-title {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cell-sub {
+  display: block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+
+.rule-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.rule-summary--ok {
+  color: var(--success);
+}
+
+.rule-summary--falla {
+  color: var(--danger);
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  margin-bottom: var(--space-5);
+}
+
+.detalle-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detalle-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.detalle-value {
+  font-size: var(--fs-md);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.detalle-title {
+  font-size: var(--fs-md);
+  margin-bottom: var(--space-3);
+}
+
+.decision {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.decision__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+  flex: none;
+}
+
+.decision__icon--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.decision__title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.decision__desc {
+  margin-top: var(--space-1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+
+  ui-icon {
+    flex: none;
+    margin-top: 1px;
+    color: var(--text-3);
+  }
+}
