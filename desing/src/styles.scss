@@ -1,0 +1,48 @@
+@use 'bootstrap/scss/bootstrap' with (
+  $primary: #0071e3,
+  $secondary: #707070,
+  $success: #248a3d,
+  $danger: #d70015,
+  $warning: #b25000,
+  $info: #6e6e73,
+  $light: #f5f5f7,
+  $dark: #1d1d1f,
+  $body-bg: #f5f5f7,
+  $body-color: #1d1d1f,
+  $body-secondary-color: #707070,
+  $body-tertiary-color: #86868b,
+  $border-color: #e8e8ed,
+  $font-family-sans-serif: (
+    'SF Pro Text',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Inter',
+    system-ui,
+    'Segoe UI',
+    Roboto,
+    sans-serif,
+  ),
+  $headings-font-family: (
+    'SF Pro Display',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Inter Tight',
+    'Inter',
+    system-ui,
+    'Segoe UI',
+    Roboto,
+    sans-serif,
+  ),
+  $headings-font-weight: 600,
+  $enable-shadows: false,
+  $border-radius: 0.75rem,
+  $border-radius-sm: 0.65rem,
+  $border-radius-lg: 0.9rem,
+  $border-radius-xl: 1.25rem,
+  $border-radius-xxl: 1.75rem
+);
+
+@use 'styles/tokens';
+@use 'styles/base';
+@use 'styles/components';
+@use 'styles/view-transition';

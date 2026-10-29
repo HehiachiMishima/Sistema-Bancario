@@ -1,0 +1,131 @@
+<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ saludo() }}{{ usuario() ? ', ' + usuario()!.nombre : '' }}</h1>
+    <p class="text-body-secondary mb-0">Este es el resumen del control de accesos de la plataforma.</p>
+  </div>
+</header>
+
+<section class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-5">
+  @for (metrica of metricas(); track metrica.id) {
+    <div class="col">
+      <article class="card h-100 metric" [class]="'metric--' + metrica.acento">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="metric__icon d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0">
+              <ui-icon [name]="metrica.icono" [size]="20" />
+            </span>
+            <span class="small fw-semibold text-body-secondary">{{ metrica.etiqueta }}</span>
+          </div>
+          @if (cargando()) {
+            <span class="placeholder col-6 d-block mb-2" style="height: 34px"></span>
+          } @else {
+            <span class="d-block fs-2 fw-semibold lh-1">{{ metrica.valor ?? '—' }}</span>
+          }
+          <span class="d-block small text-body-secondary mt-2">{{ metrica.detalle }}</span>
+        </div>
+      </article>
+    </div>
+  }
+</section>
+
+@if (hayDatosUsuarios() || hayBarras()) {
+  <section class="mb-5">
+    <h2 class="h5 mb-3">Estadísticas</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+      @if (hayDatosUsuarios()) {
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                  <h3 class="h6 fw-semibold mb-0">Estado de usuarios</h3>
+                  <p class="small text-body-secondary mb-0">Activos frente a inactivos</p>
+                </div>
+                <span class="badge rounded-pill text-bg-success">
+                  <span class="dot"></span>{{ pctActivos() }}% activos
+                </span>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-donut [segmentos]="segmentosUsuarios()" centro="Usuarios" titulo="Estado de usuarios" />
+              </div>
+            </div>
+          </article>
+        </div>
+      }
+
+      @if (hayBarras()) {
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header>
+                <h3 class="h6 fw-semibold mb-0">Totales por entidad</h3>
+                <p class="small text-body-secondary mb-0">Volumen registrado por tipo</p>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-bars [datos]="barrasEntidades()" [altura]="240" />
+              </div>
+            </div>
+          </article>
+        </div>
+      }
+
+      @if (hayDatosUsuarios()) {
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header>
+                <h3 class="h6 fw-semibold mb-0">Usuarios activos</h3>
+                <p class="small text-body-secondary mb-0">Proporción habilitada</p>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-gauge [valor]="pctActivos()" etiqueta="Activos" color="var(--success)" [tamano]="200" />
+              </div>
+            </div>
+          </article>
+        </div>
+      }
+    </div>
+  </section>
+}
+
+<section class="mb-5">
+  <h2 class="h5 mb-3">Accesos rápidos</h2>
+  <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+    @for (modulo of modulos(); track modulo.id) {
+      <div class="col">
+        <a class="card card-body h-100 d-flex flex-row align-items-center gap-3 text-decoration-none quick-card" [routerLink]="[panelRuta, modulo.ruta]">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-body-secondary text-body-secondary flex-shrink-0" style="width: 40px; height: 40px">
+            <ui-icon [name]="modulo.icono" [size]="20" />
+          </span>
+          <span class="d-flex flex-column flex-grow-1" style="min-width: 0">
+            <span class="fw-semibold text-body">{{ modulo.nombre }}</span>
+            <span class="small text-body-secondary text-truncate">{{ modulo.descripcion }}</span>
+          </span>
+          <ui-icon name="chevronRight" [size]="18" class="text-body-secondary flex-shrink-0" />
+        </a>
+      </div>
+    }
+  </div>
+</section>
+
+<section>
+  <h2 class="h5 mb-3">Cómo funciona el acceso</h2>
+  <div class="card">
+    <div class="card-body">
+      <ol class="list-unstyled d-flex flex-column gap-3 mb-0">
+        <li class="d-flex align-items-start gap-3">
+          <span class="badge rounded-circle bg-primary-subtle text-primary-emphasis d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px">1</span>
+          <div><strong>Inicias sesión.</strong> El backend valida tus credenciales y resuelve tus permisos.</div>
+        </li>
+        <li class="d-flex align-items-start gap-3">
+          <span class="badge rounded-circle bg-primary-subtle text-primary-emphasis d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px">2</span>
+          <div><strong>Ves solo lo permitido.</strong> Los paneles y módulos aparecen según tus permisos; el resto queda bloqueado.</div>
+        </li>
+        <li class="d-flex align-items-start gap-3">
+          <span class="badge rounded-circle bg-primary-subtle text-primary-emphasis d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px">3</span>
+          <div><strong>Los roles agrupan permisos.</strong> El rol vive en el backend; la interfaz se guía por permisos individuales.</div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>

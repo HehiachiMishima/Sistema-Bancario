@@ -1,0 +1,100 @@
+<div class="app-shell d-flex min-vh-100" [class.app-shell--open]="menuAbierto()">
+  <aside id="shell-nav" class="app-sidebar border-end d-flex flex-column" [attr.inert]="menuAbierto() ? null : ''">
+    <div class="d-flex align-items-center gap-3 border-bottom px-3 flex-shrink-0" style="min-height: 56px">
+      <span
+        class="d-inline-flex align-items-center justify-content-center bg-white border rounded-3 p-1 flex-shrink-0"
+        style="width: 34px; height: 34px"
+      >
+        <img src="logo.png" alt="Sistema Bancario" width="44" height="44" class="img-fluid object-fit-contain" />
+      </span>
+      <span class="d-flex flex-column lh-1" style="min-width: 0">
+        <span class="fw-semibold text-truncate">{{ panel().nombre }}</span>
+        <span class="small text-body-secondary text-truncate">{{ usuario()?.nombre }} {{ usuario()?.apellido }}</span>
+      </span>
+    </div>
+
+    <nav class="nav flex-column gap-1 p-3 flex-grow-1 overflow-auto">
+      <p class="text-uppercase small fw-semibold text-body-secondary px-2 mb-2" style="letter-spacing: 0.08em">Módulos</p>
+      @for (modulo of modulos(); track modulo.id; let i = $index) {
+        <a
+          class="nav-link d-flex align-items-center gap-3 rounded-3 px-3 py-2"
+          [routerLink]="modulo.ruta"
+          routerLinkActive="active"
+          (click)="cerrarMenu()"
+        >
+          <ui-icon [name]="modulo.icono" [size]="18" />
+          <span class="text-truncate">{{ modulo.nombre }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="p-3 border-top flex-shrink-0">
+      <button
+        type="button"
+        class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2"
+        (click)="irAPaneles()"
+      >
+        <ui-icon name="panel" [size]="18" />
+        Cambiar de panel
+      </button>
+    </div>
+  </aside>
+
+  @if (menuAbierto()) {
+    <div class="app-sidebar-backdrop" (click)="cerrarMenu()"></div>
+  }
+
+  <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
+    <header class="app-topbar navbar border-bottom gap-2 px-3 px-md-4">
+      <button
+        type="button"
+        class="btn btn-link text-body-secondary p-2 flex-shrink-0"
+        (click)="alternarMenu()"
+        aria-label="Menú"
+        [attr.aria-expanded]="menuAbierto()"
+        aria-controls="shell-nav"
+      >
+        <span class="app-menu-icon" aria-hidden="true">
+          <ui-icon class="app-menu-icon-open" name="menu" [size]="20" />
+          <ui-icon class="app-menu-icon-close" name="close" [size]="20" />
+        </span>
+      </button>
+
+      <nav aria-label="breadcrumb" class="d-none d-sm-block">
+        <ol class="breadcrumb mb-0 small">
+          <li class="breadcrumb-item text-body-secondary">Panel</li>
+          <li class="breadcrumb-item active" aria-current="page">{{ panel().nombre }}</li>
+        </ol>
+      </nav>
+
+      <div class="ms-auto d-flex align-items-center gap-2 gap-md-3">
+        <button type="button" class="btn btn-link text-body-secondary p-2" (click)="alternarTema($event)" aria-label="Cambiar tema">
+          <ui-icon [name]="tema.tema() === 'dark' ? 'sun' : 'moon'" [size]="18" />
+        </button>
+
+        @if (usuario(); as u) {
+          <div class="d-none d-md-flex align-items-center gap-2 border-start ps-3">
+            <span
+              class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center fw-semibold flex-shrink-0"
+              style="width: 38px; height: 38px"
+            >
+              {{ iniciales() }}
+            </span>
+            <span class="d-flex flex-column lh-1" style="min-width: 0; max-width: 180px">
+              <span class="small fw-semibold text-truncate">{{ u.nombre }} {{ u.apellido }}</span>
+              <span class="text-body-secondary text-truncate" style="font-size: 0.72rem">{{ u.email }}</span>
+            </span>
+          </div>
+        }
+
+        <button type="button" class="btn btn-link text-body-secondary p-2" (click)="cerrarSesion()" aria-label="Cerrar sesión">
+          <ui-icon name="logout" [size]="18" />
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-grow-1 p-3 p-md-4" style="min-width: 0">
+      <router-outlet />
+    </main>
+  </div>
+</div>

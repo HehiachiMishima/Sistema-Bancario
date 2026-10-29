@@ -1,0 +1,182 @@
+<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">Transacciones</h1>
+    <p class="text-body-secondary mb-0">
+      Movimientos registrados por todos los usuarios con rol USUARIO, con su evaluación de reglas.
+    </p>
+  </div>
+</header>
+
+<div class="d-flex flex-wrap align-items-stretch gap-2 mb-3">
+  <div class="input-group flex-grow-1" style="min-width: 220px">
+    <span class="input-group-text bg-body text-body-secondary">
+      <ui-icon name="search" [size]="18" />
+    </span>
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Buscar por referencia, cuenta o titular…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
+  </div>
+  <select class="form-select" style="width: auto; min-width: 165px" (change)="cambiarFiltroTipo($any($event.target).value)">
+    <option value="TODOS">Todos los tipos</option>
+    <option value="DEPOSITO">Depósito</option>
+    <option value="RETIRO">Retiro</option>
+    <option value="TRANSFERENCIA">Transferencia</option>
+    <option value="PAGO">Pago</option>
+  </select>
+  <select class="form-select" style="width: auto; min-width: 165px" (change)="cambiarFiltroEstado($any($event.target).value)">
+    <option value="TODOS">Todos los estados</option>
+    <option value="PENDIENTE">Pendiente</option>
+    <option value="APROBADA">Aprobada</option>
+    <option value="RECHAZADA">Rechazada</option>
+  </select>
+  <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" (click)="cargar()" [disabled]="cargando()">
+    <ui-icon name="refresh" [size]="16" />
+    Actualizar
+  </button>
+</div>
+
+<div class="card overflow-hidden">
+  @if (cargando()) {
+    <div class="d-flex align-items-center justify-content-center gap-2 py-5 text-body-secondary">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      Cargando transacciones…
+    </div>
+  } @else if (error()) {
+    <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mt-3" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  } @else if (filtrados().length === 0) {
+    <ui-empty
+      icono="transfer"
+      [titulo]="busqueda() || filtroEstado() !== 'TODOS' || filtroTipo() !== 'TODOS' ? 'Sin resultados' : 'Aún no hay transacciones'"
+      [mensaje]="busqueda() || filtroEstado() !== 'TODOS' || filtroTipo() !== 'TODOS'
+        ? 'Ningún movimiento coincide con los filtros.'
+        : 'Los movimientos de los usuarios aparecerán aquí.'"
+    />
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" appColumnasRedimensionables>
+        <thead>
+          <tr>
+            <th>Referencia</th>
+            <th>Tipo</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Monto</th>
+            <th>Reglas</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th class="text-end">Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (movimiento of paginados(); track movimiento.id) {
+            <tr>
+              <td>
+                <span class="ref">{{ movimiento.referencia }}</span>
+                @if (movimiento.descripcion) {
+                  <span class="ref-sub" [title]="movimiento.descripcion">{{ movimiento.descripcion }}</span>
+                }
+              </td>
+              <td>{{ tipoLabel(movimiento.tipoTransaccion) }}</td>
+              <td>
+                <span class="cell-title">{{ movimiento.cuentaOrigenNumero || '—' }}</span>
+                <span class="cell-sub">{{ movimiento.cuentaOrigenTitular || 'Sin titular' }}</span>
+              </td>
+              <td>
+                <span class="cell-title">{{ movimiento.cuentaDestinoNumero || '—' }}</span>
+                <span class="cell-sub">{{ movimiento.cuentaDestinoTitular || 'Sin titular' }}</span>
+              </td>
+              <td class="money">{{ soles(movimiento.monto) }}</td>
+              <td>
+                <span [class]="resumenReglasClass(movimiento)">
+                  @if (reglasTotal(movimiento) > 0) {
+                    <ui-icon
+                      [name]="reglasAprobadas(movimiento) === reglasTotal(movimiento) ? 'check' : 'xCircle'"
+                      [size]="14"
+                    />
+                  }
+                  {{ resumenReglas(movimiento) }}
+                </span>
+              </td>
+              <td>
+                <span [class]="badgeClass(movimiento.estado)">
+                  <span class="dot"></span> {{ estadoLabel(movimiento.estado) }}
+                </span>
+              </td>
+              <td class="text-body-secondary text-nowrap">{{ movimiento.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <div class="d-flex align-items-center justify-content-end gap-1">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" title="Ver detalle y reglas" (click)="abrirDetalle(movimiento)">
+                    <ui-icon name="info" [size]="18" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ui-paginador
+      [pagina]="paginaActual()"
+      [total]="filtrados().length"
+      [porPagina]="porPagina()"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  }
+</div>
+
+<ui-modal [abierto]="detalle() !== null" titulo="Detalle del movimiento" [subtitulo]="detalle()?.referencia ?? ''" ancho="lg" (cerrar)="detalle.set(null)">
+  @if (detalle(); as movimiento) {
+    <div class="row g-3 p-3 border rounded-3 bg-body-tertiary mb-4">
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Tipo</span>
+        <span class="d-block">{{ tipoLabel(movimiento.tipoTransaccion) }}</span>
+      </div>
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Monto</span>
+        <span class="d-block">{{ soles(movimiento.monto) }}</span>
+      </div>
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Estado</span>
+        <span class="d-block">{{ estadoLabel(movimiento.estado) }}</span>
+      </div>
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Fecha</span>
+        <span class="d-block">{{ movimiento.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Cuenta origen</span>
+        <span class="d-block">{{ movimiento.cuentaOrigenNumero || '—' }}</span>
+        <span class="cell-sub">{{ movimiento.cuentaOrigenTitular || 'Sin titular' }}</span>
+      </div>
+      <div class="col-6 col-md-4">
+        <span class="d-block text-uppercase text-body-secondary fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em">Cuenta destino</span>
+        <span class="d-block">{{ movimiento.cuentaDestinoNumero || '—' }}</span>
+        <span class="cell-sub">{{ movimiento.cuentaDestinoTitular || 'Sin titular' }}</span>
+      </div>
+    </div>
+
+    @if (movimiento.descripcion) {
+      <p class="alert alert-secondary d-flex align-items-start gap-2 small">
+        <ui-icon name="info" [size]="16" class="flex-shrink-0 mt-1" />
+        <span>{{ movimiento.descripcion }}</span>
+      </p>
+    }
+
+    <h3 class="h6 fw-semibold mt-4 mb-3">Evaluación de reglas</h3>
+    <app-reglas-evaluacion [reglas]="movimiento.reglas || []" />
+  }
+
+  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+    <button type="button" class="btn btn-outline-secondary" (click)="detalle.set(null)">Cerrar</button>
+  </div>
+</ui-modal>

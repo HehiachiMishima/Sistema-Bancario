@@ -1,0 +1,26 @@
+.launcher-topbar {
+  background-color: var(--shell-surface);
+}
+
+.panel-card {
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.panel-card:hover {
+  background: var(--bs-tertiary-bg);
+  border-color: var(--bs-secondary-border-subtle);
+}
+
+.panel-card--locked {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.panel-card__open {
+  transition: transform 200ms ease, color 200ms ease;
+}
+
+.panel-card:hover .panel-card__open {
+  transform: translateX(3px);
+  color: var(--bs-body-color);
+}

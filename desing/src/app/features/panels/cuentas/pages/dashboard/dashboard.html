@@ -1,0 +1,159 @@
+<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ saludo() }}{{ usuario() ? ', ' + usuario()!.nombre : '' }}</h1>
+    <p class="text-body-secondary mb-0">Este es el resumen de las cuentas y saldos.</p>
+  </div>
+</header>
+
+@if (error()) {
+  <div class="card">
+    <ui-empty icono="alerta" titulo="No se pudo cargar el dashboard" [mensaje]="error()!">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mt-3" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  </div>
+} @else {
+  <section class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-5">
+    @for (metrica of metricas(); track metrica.id) {
+      <div class="col">
+        <article class="card h-100 metric" [class]="'metric--' + metrica.acento">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="metric__icon d-inline-flex align-items-center justify-content-center rounded-3 flex-shrink-0">
+                <ui-icon [name]="metrica.icono" [size]="20" />
+              </span>
+              <span class="small fw-semibold text-body-secondary">{{ metrica.etiqueta }}</span>
+            </div>
+            @if (cargando()) {
+              <span class="placeholder col-6 d-block mb-2" style="height: 34px"></span>
+            } @else {
+              <span class="d-block fs-2 fw-semibold lh-1">{{ metrica.valor ?? '—' }}</span>
+            }
+            <span class="d-block small text-body-secondary mt-2">{{ metrica.detalle }}</span>
+          </div>
+        </article>
+      </div>
+    }
+  </section>
+
+  @if (hayDatos()) {
+    <section class="mb-5">
+      <h2 class="h5 mb-3">Estadísticas</h2>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header>
+                <h3 class="h6 fw-semibold mb-0">Cuentas por tipo</h3>
+                <p class="small text-body-secondary mb-0">Distribución de tus productos</p>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-donut [segmentos]="segmentosTipo()" centro="Cuentas" titulo="Cuentas por tipo" />
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header>
+                <h3 class="h6 fw-semibold mb-0">Volumen por tipo</h3>
+                <p class="small text-body-secondary mb-0">Cantidad de cuentas registradas</p>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-bars [datos]="barrasTipo()" [altura]="240" />
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="col">
+          <article class="card h-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <header>
+                <h3 class="h6 fw-semibold mb-0">Cuentas operativas</h3>
+                <p class="small text-body-secondary mb-0">Proporción activa</p>
+              </header>
+              <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                <ui-gauge [valor]="pctActivas()" etiqueta="Activas" color="var(--success)" [tamano]="200" />
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  } @else if (!cargando()) {
+    <section class="card mb-5">
+      <ui-empty icono="bank" titulo="Aún no tienes cuentas" mensaje="Abre tu primera cuenta para empezar a ver saldos y estadísticas.">
+        <a class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2 mt-3" [routerLink]="[panelRuta, 'cuentas']">
+          <ui-icon name="plus" [size]="16" /> Ir a Cuentas
+        </a>
+      </ui-empty>
+    </section>
+  }
+
+  @if (recientes().length > 0) {
+    <section class="mb-5">
+      <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+        <h2 class="h5 mb-0">Cuentas recientes</h2>
+        <a class="small fw-semibold text-body-secondary text-decoration-none d-inline-flex align-items-center gap-1" [routerLink]="[panelRuta, 'cuentas']">
+          Ver todas <ui-icon name="chevronRight" [size]="16" />
+        </a>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Tipo</th>
+                <th>Saldo</th>
+                <th>Estado</th>
+                <th>Creada</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cuenta of recientes(); track cuenta.id) {
+                <tr>
+                  <td class="fw-semibold">{{ cuenta.numeroCuenta }}</td>
+                  <td>{{ tipoLabel(cuenta.tipoCuenta) }}</td>
+                  <td class="money">{{ soles(cuenta.saldo) }}</td>
+                  <td>
+                    @if (cuenta.activo) {
+                      <span class="badge rounded-pill text-bg-success"><span class="dot"></span> Activa</span>
+                    } @else {
+                      <span class="badge rounded-pill text-bg-secondary"><span class="dot"></span> Inactiva</span>
+                    }
+                  </td>
+                  <td class="text-body-secondary">{{ cuenta.creadoEn | date: 'dd/MM/yyyy' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  }
+
+  <section>
+    <h2 class="h5 mb-3">Accesos rápidos</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+      @for (modulo of modulos(); track modulo.id) {
+        <div class="col">
+          <a class="card card-body h-100 d-flex flex-row align-items-center gap-3 text-decoration-none quick-card" [routerLink]="[panelRuta, modulo.ruta]">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-body-secondary text-body-secondary flex-shrink-0" style="width: 40px; height: 40px">
+              <ui-icon [name]="modulo.icono" [size]="20" />
+            </span>
+            <span class="d-flex flex-column flex-grow-1" style="min-width: 0">
+              <span class="fw-semibold text-body">{{ modulo.nombre }}</span>
+              <span class="small text-body-secondary text-truncate">{{ modulo.descripcion }}</span>
+            </span>
+            <ui-icon name="chevronRight" [size]="18" class="text-body-secondary flex-shrink-0" />
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+}

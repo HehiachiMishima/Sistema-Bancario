@@ -1,0 +1,424 @@
+<header class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">Usuarios</h1>
+    <p class="text-body-secondary mb-0">Altas, edición, estado y asignación de roles.</p>
+  </div>
+  <button *hasPermiso="permisos.CREAR_USUARIOS" type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="abrirCrear()">
+    <ui-icon name="plus" [size]="18" />
+    Nuevo usuario
+  </button>
+</header>
+
+<div class="d-flex flex-wrap align-items-stretch gap-2 mb-3">
+  <div class="input-group flex-grow-1" style="min-width: 220px">
+    <span class="input-group-text bg-body text-body-secondary">
+      <ui-icon name="search" [size]="18" />
+    </span>
+    <input
+      type="search"
+      class="form-control"
+      placeholder="Buscar por usuario, nombre o email…"
+      [value]="busqueda()"
+      (input)="buscar($any($event.target).value)"
+    />
+  </div>
+  <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" (click)="cargar()" [disabled]="cargando()">
+    <ui-icon name="refresh" [size]="16" />
+    Actualizar
+  </button>
+</div>
+
+<div class="card overflow-hidden">
+  @if (cargando()) {
+    <div class="d-flex align-items-center justify-content-center gap-2 py-5 text-body-secondary">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      Cargando usuarios…
+    </div>
+  } @else if (error()) {
+    <ui-empty icono="alerta" titulo="No se pudo cargar" [mensaje]="error()!">
+      <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2 mt-3" (click)="cargar()">
+        <ui-icon name="refresh" [size]="16" /> Reintentar
+      </button>
+    </ui-empty>
+  } @else if (filtrados().length === 0) {
+    <ui-empty
+      icono="usuarios"
+      [titulo]="busqueda() ? 'Sin resultados' : 'Aún no hay usuarios'"
+      [mensaje]="busqueda() ? 'Ningún usuario coincide con la búsqueda.' : 'Crea el primer usuario para empezar.'"
+    ></ui-empty>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" appColumnasRedimensionables>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Rol</th>
+            <th>Permisos</th>
+            <th>Teléfono</th>
+            <th>Creado por</th>
+            <th>Actualizado por</th>
+            <th>Creado</th>
+            <th>Actualizado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of paginados(); track usuario.id) {
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center fw-semibold flex-shrink-0" style="width: 38px; height: 38px">
+                    {{ iniciales(usuario) }}
+                  </span>
+                  <span class="d-flex flex-column lh-sm" style="min-width: 0">
+                    <span class="fw-semibold text-body text-truncate">{{ usuario.nombre }} {{ usuario.apellido }}</span>
+                    <span class="text-body-secondary small text-truncate">{{ usuario.usuario }}</span>
+                  </span>
+                </div>
+              </td>
+              <td>{{ usuario.email }}</td>
+              <td>
+                @if (usuario.activo) {
+                  <span class="badge rounded-pill text-bg-success"><span class="dot"></span> Activo</span>
+                } @else {
+                  <span class="badge rounded-pill text-bg-secondary"><span class="dot"></span> Inactivo</span>
+                }
+              </td>
+              <td>
+                @if (!tieneResumen(usuario.id)) {
+                  <span class="text-body-secondary">—</span>
+                } @else if (rolesDe(usuario.id).length) {
+                  <span class="d-inline-flex flex-wrap gap-1">
+                    @for (rol of rolesDe(usuario.id); track rol) {
+                      <span class="badge rounded-pill text-bg-primary">{{ rol }}</span>
+                    }
+                  </span>
+                } @else {
+                  <span class="text-body-secondary">Sin rol</span>
+                }
+              </td>
+              <td>
+                @if (!tieneResumen(usuario.id)) {
+                  <span class="text-body-secondary">—</span>
+                } @else if (permisosDe(usuario.id).length) {
+                  <span class="badge rounded-pill text-bg-info" [title]="permisosDe(usuario.id).join(', ')">
+                    {{ permisosDe(usuario.id).length }}
+                  </span>
+                } @else {
+                  <span class="text-body-secondary">Sin permisos</span>
+                }
+              </td>
+              <td>{{ usuario.telefono || '—' }}</td>
+              <td class="text-body-secondary">{{ usuario.creadoPor | actorLabel }}</td>
+              <td class="text-body-secondary">{{ usuario.actualizadoPor | actorLabel }}</td>
+              <td class="text-body-secondary text-nowrap">{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td class="text-body-secondary text-nowrap">{{ usuario.actualizadoEn ? (usuario.actualizadoEn | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td>
+                <div class="d-flex align-items-center justify-content-end gap-1">
+                  <button *hasPermiso="permisos.ASIGNAR_ROLES" type="button" class="btn btn-outline-secondary btn-sm" title="Roles" (click)="abrirRoles(usuario)">
+                    <ui-icon name="shieldCheck" [size]="18" />
+                  </button>
+                  <button *hasPermiso="permisos.ASIGNAR_PERMISOS" type="button" class="btn btn-outline-secondary btn-sm" title="Permisos individuales" (click)="abrirPermisos(usuario)">
+                    <ui-icon name="key" [size]="18" />
+                  </button>
+                  <button *hasPermiso="permisos.MODIFICAR_USUARIOS" type="button" class="btn btn-outline-secondary btn-sm" title="Editar" (click)="abrirEditar(usuario)">
+                    <ui-icon name="edit" [size]="18" />
+                  </button>
+                  <button
+                    *hasPermiso="permisos.MODIFICAR_USUARIOS"
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-outline-secondary]="!usuario.activo"
+                    [class.btn-outline-danger]="usuario.activo"
+                    [title]="usuario.activo ? 'Desactivar' : 'Activar'"
+                    (click)="alternarActivo(usuario)"
+                  >
+                    <ui-icon name="power" [size]="18" />
+                  </button>
+                  <button *hasPermiso="permisos.ELIMINAR_USUARIOS" type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" (click)="confirmarEliminar(usuario)">
+                    <ui-icon name="trash" [size]="18" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <ui-paginador
+      [pagina]="paginaActual()"
+      [total]="filtrados().length"
+      [porPagina]="porPagina()"
+      (paginaCambia)="pagina.set($event)"
+      (porPaginaCambia)="cambiarPorPagina($event)"
+    />
+  }
+</div>
+
+<ui-modal
+  [abierto]="formAbierto()"
+  [titulo]="editando() ? 'Editar usuario' : 'Nuevo usuario'"
+  [subtitulo]="editando() ? 'Actualiza los datos del usuario.' : ''"
+  (cerrar)="cerrarForm()"
+>
+  <form class="row g-3" [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="usuario-form">Usuario <span class="text-danger">*</span></label>
+      <input id="usuario-form" class="form-control" [class.is-invalid]="campoInvalido('usuario')" formControlName="usuario" placeholder="jperez" />
+      @if (campoInvalido('usuario')) {
+        <div class="invalid-feedback d-block">El usuario es obligatorio.</div>
+      }
+    </div>
+
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="contrasena-form">
+        Contraseña @if (!editando()) { <span class="text-danger">*</span> }
+      </label>
+      <input
+        id="contrasena-form"
+        type="password"
+        class="form-control"
+        [class.is-invalid]="campoInvalido('contrasena')"
+        formControlName="contrasena"
+        [placeholder]="editando() ? 'Dejar en blanco para no cambiar' : 'Mínimo 6 caracteres'"
+      />
+      @if (campoInvalido('contrasena')) {
+        <div class="invalid-feedback d-block">Mínimo 6 caracteres.</div>
+      }
+    </div>
+
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="nombre-form">Nombre <span class="text-danger">*</span></label>
+      <input id="nombre-form" class="form-control" [class.is-invalid]="campoInvalido('nombre')" formControlName="nombre" />
+      @if (campoInvalido('nombre')) {
+        <div class="invalid-feedback d-block">El nombre es obligatorio.</div>
+      }
+    </div>
+
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="apellido-form">Apellido <span class="text-danger">*</span></label>
+      <input id="apellido-form" class="form-control" [class.is-invalid]="campoInvalido('apellido')" formControlName="apellido" />
+      @if (campoInvalido('apellido')) {
+        <div class="invalid-feedback d-block">El apellido es obligatorio.</div>
+      }
+    </div>
+
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="email-form">Email <span class="text-danger">*</span></label>
+      <input id="email-form" type="email" class="form-control" [class.is-invalid]="campoInvalido('email')" formControlName="email" placeholder="correo@dominio.com" />
+      @if (campoInvalido('email')) {
+        <div class="invalid-feedback d-block">Ingresa un email válido.</div>
+      }
+    </div>
+
+    <div class="col-sm-6">
+      <label class="form-label small fw-semibold" for="telefono-form">Teléfono</label>
+      <input id="telefono-form" class="form-control" formControlName="telefono" placeholder="Opcional" />
+    </div>
+
+    @if (!editando() && puedeAsignarRoles()) {
+      <div class="col-12">
+        <label class="form-label small fw-semibold" for="rol-form">Rol inicial</label>
+        <select id="rol-form" class="form-select" formControlName="rolId" [disabled]="cargandoRoles()">
+          <option [ngValue]="null">Sin rol</option>
+          @for (rol of catalogoRoles(); track rol.id) {
+            <option [ngValue]="rol.id">
+              {{ rol.nombre }}{{ rol.activo ? '' : ' (inactivo)' }}
+            </option>
+          }
+        </select>
+        <div class="form-text">
+          Elige ANALISTA para crear un analista. Los registros públicos reciben USUARIO.
+        </div>
+      </div>
+    }
+
+    <div class="col-12">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" id="activo-form" formControlName="activo" />
+        <label class="form-check-label" for="activo-form">Usuario activo</label>
+      </div>
+    </div>
+  </form>
+
+  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+    <button type="button" class="btn btn-outline-secondary" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" (click)="guardar()" [disabled]="guardando()">
+      @if (guardando()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
+      {{ editando() ? 'Guardar cambios' : 'Crear usuario' }}
+    </button>
+  </div>
+</ui-modal>
+
+<ui-modal [abierto]="eliminarAbierto()" ancho="sm" [compacto]="true" titulo="Eliminar usuario" (cerrar)="eliminarAbierto.set(false)">
+  @if (aEliminar(); as usuario) {
+    <div class="d-flex align-items-start gap-3">
+      <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger-subtle text-danger flex-shrink-0" style="width: 46px; height: 46px">
+        <ui-icon name="trash" [size]="22" />
+      </span>
+      <div style="min-width: 0">
+        <p class="fw-semibold mb-1">¿Eliminar a {{ usuario.nombre }} {{ usuario.apellido }}?</p>
+        <p class="text-body-secondary small mb-0">&#64;{{ usuario.usuario }} · Esta acción no se puede deshacer.</p>
+      </div>
+    </div>
+  }
+  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+    <button type="button" class="btn btn-outline-secondary" (click)="eliminarAbierto.set(false)">Cancelar</button>
+    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-2" (click)="eliminar()" [disabled]="eliminando()">
+      @if (eliminando()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> }
+      Eliminar
+    </button>
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="rolesAbierto()"
+  titulo="Roles del usuario"
+  [subtitulo]="usuarioRoles() ? '@' + usuarioRoles()!.usuario : ''"
+  (cerrar)="rolesAbierto.set(false)"
+>
+  <p class="p-3 bg-body-tertiary border rounded-3 small text-body-secondary mb-3">
+    Activa los roles que quieras asignar a este usuario. Sus permisos se heredan de los roles activados.
+  </p>
+  @if (cargandoRoles()) {
+    <div class="d-flex align-items-center justify-content-center gap-2 py-4 text-body-secondary">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando roles…
+    </div>
+  } @else if (catalogoRoles().length === 0) {
+    <ui-empty icono="roles" titulo="Sin roles" mensaje="No hay roles creados en el sistema." />
+  } @else {
+    <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+      @for (rol of catalogoRoles(); track rol.id) {
+        <li class="d-flex align-items-center gap-3 p-3 border rounded-3 bg-body-tertiary">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-body-secondary text-body-secondary flex-shrink-0" style="width: 36px; height: 36px">
+            <ui-icon name="shieldCheck" [size]="18" />
+          </span>
+          <span class="d-flex flex-column flex-grow-1" style="min-width: 0">
+            <span class="fw-semibold d-flex align-items-center gap-2">
+              {{ rol.nombre }}
+              @if (!rol.activo) {
+                <span class="badge rounded-pill text-bg-secondary">Inactivo</span>
+              }
+            </span>
+            <span class="small text-body-secondary text-truncate">{{ rol.descripcion || 'Sin descripción' }}</span>
+          </span>
+          <button
+            type="button"
+            class="switch"
+            [class.switch--on]="estaAsignado(rol.id)"
+            [disabled]="cambiandoRol() === rol.id"
+            (click)="alternarRol(rol)"
+            [attr.aria-pressed]="estaAsignado(rol.id)"
+            [attr.aria-label]="'Asignar ' + rol.nombre"
+          >
+            <span class="switch__thumb"></span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+    <button type="button" class="btn btn-primary" (click)="rolesAbierto.set(false)">Listo</button>
+  </div>
+</ui-modal>
+
+<ui-modal
+  [abierto]="permisosAbierto()"
+  ancho="lg"
+  titulo="Permisos individuales"
+  [subtitulo]="usuarioPermisos() ? '@' + usuarioPermisos()!.usuario + ' · herencia del rol + overrides' : ''"
+  (cerrar)="permisosAbierto.set(false)"
+>
+  <p class="p-3 bg-body-tertiary border rounded-3 small text-body-secondary mb-3">
+    <strong>Heredar</strong>: usa lo que conceden sus roles · <strong>Conceder</strong>: permite este permiso aunque el rol no lo dé ·
+    <strong>Denegar</strong>: bloquea este permiso aunque el rol lo dé.
+  </p>
+  @if (cargandoPermisos()) {
+    <div class="d-flex align-items-center justify-content-center gap-2 py-4 text-body-secondary">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando permisos…
+    </div>
+  } @else if (catalogoPermisos().length === 0) {
+    <ui-empty icono="permisos" titulo="Sin permisos" mensaje="No hay permisos en el catálogo." />
+  } @else {
+    <div class="d-flex flex-column gap-3">
+      <div class="input-group">
+        <span class="input-group-text bg-body text-body-secondary">
+          <ui-icon name="search" [size]="18" />
+        </span>
+        <input
+          type="search"
+          class="form-control"
+          placeholder="Buscar permiso…"
+          [value]="filtroPermisos()"
+          (input)="filtroPermisos.set($any($event.target).value)"
+        />
+      </div>
+
+      <div class="d-flex flex-wrap align-items-center gap-2 small text-body-secondary">
+        <span class="badge rounded-pill text-bg-primary"><span class="dot"></span> {{ totalEfectivos() }} efectivos</span>
+        <span class="badge rounded-pill text-bg-success">+{{ totalConcedidos() }} concedidos</span>
+        <span class="badge rounded-pill text-bg-danger">−{{ totalDenegados() }} denegados</span>
+      </div>
+
+      @if (permisosFiltrados().length === 0) {
+        <ui-empty icono="search" titulo="Sin resultados" mensaje="Ningún permiso coincide con la búsqueda." />
+      } @else {
+        <ul class="list-unstyled d-flex flex-column gap-2 mb-0 overflow-auto" style="max-height: min(52vh, 460px)">
+          @for (permiso of permisosFiltrados(); track permiso.id) {
+            <li class="d-flex align-items-center gap-3 p-3 border rounded-3 bg-body" [class]="'perm-item--' + origenDe(permiso.id)">
+              <span class="d-flex flex-column flex-grow-1" style="min-width: 0">
+                <span class="font-monospace small fw-semibold">{{ permiso.nombre }}</span>
+                <span class="text-body-secondary" style="font-size: 0.78rem">
+                  {{ permiso.descripcion || 'Sin descripción' }}
+                  @switch (origenDe(permiso.id)) {
+                    @case ('heredado') { · heredado del rol }
+                    @case ('concedido') { · concedido a este usuario }
+                    @case ('denegado') { · denegado a este usuario }
+                    @default { · sin acceso }
+                  }
+                  @if (!permiso.activo) { · permiso inactivo }
+                </span>
+              </span>
+
+              <div class="btn-group btn-group-sm flex-shrink-0" role="group" [attr.aria-label]="'Permiso ' + permiso.nombre">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  [class.active]="origenDe(permiso.id) === 'heredado'"
+                  [disabled]="cambiandoPermiso() === permiso.id || !permiteOverride()"
+                  (click)="heredar(permiso)"
+                >
+                  Heredar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  [class.active]="origenDe(permiso.id) === 'concedido'"
+                  [disabled]="cambiandoPermiso() === permiso.id || !permiteOverride()"
+                  (click)="conceder(permiso)"
+                >
+                  Conceder
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  [class.active]="origenDe(permiso.id) === 'denegado'"
+                  [disabled]="cambiandoPermiso() === permiso.id || !permiteOverride()"
+                  (click)="denegar(permiso)"
+                >
+                  Denegar
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+  <div modal-footer class="d-flex justify-content-end gap-2 w-100">
+    <button type="button" class="btn btn-primary" (click)="permisosAbierto.set(false)">Listo</button>
+  </div>
+</ui-modal>
